@@ -1,0 +1,4 @@
+type,timestamp,event,data
+Event,1751,CONTROL_MODE_ENABLE,<humanoid_control.control_mode.PlayMotionControl object at 0x7244822dfb80>
+Event,4961687,MOTION_START,0-Subject_33_F_13_poses_action_sequence_regulation.txt
+Event,9043461,DISABLE,not_valid

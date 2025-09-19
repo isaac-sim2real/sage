@@ -1,0 +1,4 @@
+type,timestamp,event,data
+Event,4729,CONTROL_MODE_ENABLE,<humanoid_control.control_mode.PlayMotionControl object at 0x79eeabef8b50>
+Event,4963012,MOTION_START,0-guitar_right01_poses_action_sequence_regulation.txt
+Event,11243799,DISABLE,not_valid

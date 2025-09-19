@@ -1,0 +1,4 @@
+type,timestamp,event,data
+Event,22276,CONTROL_MODE_ENABLE,<humanoid_control.control_mode.PlayMotionControl object at 0x729fad61ee80>
+Event,4982157,MOTION_START,0-E11-body_hook_right_t2_poses_action_sequence_regulation.txt
+Event,8363914,DISABLE,not_valid
