@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "joint-motion-gap"
+version = "0.1.0"
+description = "Joint Motion Gap Analysis Framework for Sim-to-Real Robot Performance Evaluation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "JointMotionGap Team"},
+]
+keywords = ["robotics", "simulation", "isaac-sim", "motion-analysis", "sim-to-real"]
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "scipy",
+    "pandas>=1.3.0",
+    "xlsxwriter",
+    "pyyaml",
+]
+
+[tool.setuptools]
+packages = ["joint_motion_gap"]
+
+# Code formatting with Black
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+
+# Import sorting with isort (simplified from benchmark-joint-motion)
+[tool.isort]
+py_version = 310
+line_length = 120
+group_by_package = true
+profile = "black"
+
+sections = [
+    "FUTURE",
+    "STDLIB",
+    "THIRDPARTY",
+    "FIRSTPARTY",
+    "LOCALFOLDER",
+]
+
+# Isaac Sim and Omniverse imports
+known_third_party = [
+    "isaacsim.core.api",
+    "omni.replicator.core",
+    "pxr",
+    "omni.kit",
+    "warp",
+    "carb",
+]
+
+# Linting with flake8
+[tool.flake8]
+max-line-length = 120
+extend-ignore = ["E203", "W503"]

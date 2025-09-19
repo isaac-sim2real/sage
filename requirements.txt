@@ -1,0 +1,11 @@
+matplotlib
+# Core dependencies for joint-motion-gap
+numpy
+pandas>=1.3.0
+pyyaml
+scipy
+xlsxwriter
+
+# Note: Isaac Sim and Isaac Lab are not listed here as they require
+# special installation procedures. Please follow the Isaac Lab
+# installation guide: https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html
