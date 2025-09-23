@@ -280,7 +280,7 @@ class JointMotionBenchmark:
         # Log control data (command positions)
         with open(self.control_file, "a", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["CONTROL", time, np.deg2rad(command_positions).tolist()])
+            writer.writerow(["CONTROL", time, command_positions.tolist()])
 
         # Log state motor data (actual state)
         with open(self.dof_file, "a", newline="") as f:
@@ -344,9 +344,7 @@ class JointMotionBenchmark:
             if buffer_counter % self.divisor == 0:
                 # Linear interpolation between initial and target positions
                 alpha = control_step / buffer_control_steps
-                interpolated_positions = (1 - alpha) * initial_joint_positions + alpha * np.deg2rad(
-                    motion_start_positions
-                )
+                interpolated_positions = (1 - alpha) * initial_joint_positions + alpha * motion_start_positions
 
                 # Set interpolated positions
                 target_pos = np.zeros((1, self.robot.num_dof), dtype=np.float32)
@@ -358,8 +356,8 @@ class JointMotionBenchmark:
         buffer_end_time = self.world.current_time
 
         log_message(
-            f"Buffer completed in {BUFFER_TIME:.2f} seconds, {buffer_counter+1} physics steps. Joint positions set to:"
-            f" {list(self.robot.get_joint_positions(joint_indices=self.joint_indices)[0] * 180 / np.pi)}"
+            f"Buffer completed in {BUFFER_TIME:.2f} seconds, {buffer_counter+1} physics steps. "
+            f"Joint positions set to (rad): {list(self.robot.get_joint_positions(joint_indices=self.joint_indices)[0])}"
         )
 
         log_message("Initialization complete. Starting main motion...")
@@ -385,7 +383,7 @@ class JointMotionBenchmark:
             if counter % self.divisor == 0:
                 target_pos = np.zeros((1, self.robot.num_dof), dtype=np.float32)
                 for j, idx in enumerate(self.joint_indices):
-                    target_pos[0, idx] = np.deg2rad(joint_angles[j][index])
+                    target_pos[0, idx] = joint_angles[j][index]
                 self.robot.set_joint_position_targets(target_pos)
 
             # Get and log current state
@@ -411,8 +409,8 @@ class JointMotionBenchmark:
             self.video_writer.release()
 
         log_message(
-            f"Motion completed in {counter+1} physics steps. Joint positions stopped at:"
-            f" {list(self.robot.get_joint_positions(joint_indices=self.joint_indices)[0] * 180 / np.pi)}"
+            f"Motion completed in {counter+1} physics steps. Joint positions stopped at (rad):"
+            f" {list(self.robot.get_joint_positions(joint_indices=self.joint_indices)[0])}"
         )
 
         log_message(f"Benchmark complete for {self.motion_name}. Results saved to {self.sim_output_folder}")
