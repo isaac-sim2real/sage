@@ -92,6 +92,8 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --physics-freq 200 \
     --render-freq 200 \
     --control-freq 50 \
+    --kp 100 \
+    --kd 2 \
     --headless
 ```
 

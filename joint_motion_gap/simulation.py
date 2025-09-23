@@ -73,6 +73,8 @@ class JointMotionBenchmark:
         self.physics_freq = args.physics_freq
         self.render_freq = args.render_freq
         self.control_freq = args.control_freq
+        self.kp = args.kp
+        self.kd = args.kd
         self.solver_type = args.solver_type
         self.record_video = args.record_video
 
@@ -219,6 +221,8 @@ class JointMotionBenchmark:
         default_kp = self.robot_config.get_config_value("default_kp", 50.0)
         default_kd = self.robot_config.get_config_value("default_kd", 1.0)
         self.robot.set_gains(kps=default_kp, kds=default_kd, joint_indices=self.joint_indices)
+        # Note: Currently just directly set to 50, 1 to follow upper body control in real world
+        self.robot.set_gains(kps=self.kp, kds=self.kd, joint_indices=self.joint_indices)
 
         stiffnesses, dampings = self.robot.get_gains(joint_indices=self.joint_indices)
         log_message(
