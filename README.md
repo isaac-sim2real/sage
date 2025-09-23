@@ -131,7 +131,7 @@ Motion files contain joint trajectories retargeted to specific robots. Located i
 
 **Motion Sources:**
 - **AMASS**: Motion capture data from [AMASS Dataset](https://amass.is.tue.mpg.de/)
-- **Retargeting**: Convert motion capture to robot morphology using [Human2Humanoid](https://github.com/LeCAR-Lab/human2humanoid?tab=readme-ov-file#motion-retargeting)
+- **Retargeting**: Convert motion capture to robot morphology. Various retargeting methods exist, e.g., see [Human2Humanoid](https://github.com/LeCAR-Lab/human2humanoid?tab=readme-ov-file#motion-retargeting)
 
 ### Simulation Output
 
