@@ -164,13 +164,13 @@ from joint_motion_gap.analysis import RobotDataProcessor
 ```python
 def convert_degrees_to_radians(degrees: float) -> float:
     """Convert angle from degrees to radians.
-    
+
     Args:
         degrees: Angle in degrees.
-        
+
     Returns:
         Angle in radians.
-        
+
     Raises:
         ValueError: If degrees is not a valid number.
     """
@@ -224,7 +224,7 @@ git commit -m "your commit message"
 A: Review the error messages, fix the issues, and re-commit. Many formatting issues are auto-fixed by pre-commit.
 
 ### Q: How do I resolve rebase conflicts?
-A: 
+A:
 1. Manually resolve conflict files
 2. `git add .`
 3. `git rebase --continue`
