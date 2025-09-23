@@ -29,6 +29,11 @@ Joint Motion Gap Framework combines:
   - [Simulation Execution](#simulation-execution)
   - [Data Analysis](#data-analysis)
   - [Real Robot Integration (Coming Soon)](#real-robot-integration-coming-soon)
+- [Data Format](#data-format)
+  - [Motion Files](#motion-files)
+  - [Simulation Output](#simulation-output)
+  - [Real Robot Output](#real-robot-output)
+  - [Processed Sim2Real Datasets](#processed-sim2real-datasets)
 - [Configuration](#configuration)
 - [Contributing](#contributing)
 - [License](#license)
@@ -51,7 +56,7 @@ Follow the [Isaac Lab installation guide](https://isaac-sim.github.io/IsaacLab/m
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/isaac-sim2real/joint-motion-gap.git
 cd joint-motion-gap
 
 # Install dependencies
@@ -113,6 +118,58 @@ python scripts/run_real.py \
     --motion-files motion_files/h1_2/amass \
     --output-folder output
 ```
+
+## Data Format
+
+### Motion Files
+
+Motion files contain joint trajectories retargeted to specific robots. Located in `motion_files/{robot_name}/{source}/`.
+
+**Format:**
+- **Line 1**: Joint names (comma-separated)
+- **Line 2+**: Joint angles in radians (comma-separated)
+
+**Motion Sources:**
+- **AMASS**: Motion capture data from [AMASS Dataset](https://amass.is.tue.mpg.de/)
+- **Retargeting**: Convert motion capture to robot morphology using [Human2Humanoid](https://github.com/LeCAR-Lab/human2humanoid?tab=readme-ov-file#motion-retargeting)
+
+### Simulation Output
+
+Generated in `output/sim/{robot_name}/{source}/{motion_name}/`:
+- **control.csv**: Command positions sent to robot (**radians**)
+- **state_motor.csv**: Actual joint states (positions, velocities, torques) (**radians**)
+- **joint_list.txt**: Joint configuration
+
+**CSV Format:**
+```csv
+type,timestamp,positions,velocities,torques
+CONTROL/STATE_MOTOR,0.0,"[angle1, angle2, ...]","[vel1, vel2, ...]","[torque1, torque2, ...]"
+```
+
+### Real Robot Output
+
+Generated in `output/real/{robot_name}/{source}/{motion_name}/`:
+- **control.csv**: Commands sent to real robot (**radians**)
+- **state_motor.csv**: Measured joint states (**radians**)
+- **state_base.csv**: IMU/base measurements
+- **event.csv**: Event timestamps
+
+**Key Differences from Simulation:**
+- Timestamps in microseconds (vs. seconds)
+- Additional columns in state_motor.csv: temperatures, currents
+- Type names: `Control/StateMotor` (vs. `CONTROL/STATE_MOTOR`)
+- Irregular timing due to real-world constraints
+
+### Processed Sim2Real Datasets
+
+After collecting both simulation and real robot data pairs, we process them into structured datasets suitable for training sim2real gap compensation models. These datasets align temporal sequences and provide paired observations for machine learning approaches.
+
+**Available Processed Datasets:**
+
+| Robot Name | Dataset Link |
+|------------|-------------|
+| unitree_h1_2 | [Unitree H1-2 Sim2Real Dataset](https://example.com/unitree_h1_2_dataset) |
+| realman_wr75s | [Realman WR75S Sim2Real Dataset](https://example.com/realman_wr75s_dataset) |
 
 ## Configuration
 
