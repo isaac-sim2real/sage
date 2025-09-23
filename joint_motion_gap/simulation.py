@@ -15,6 +15,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import omni
+from scipy.interpolate import interp1d
 
 from .assets import get_robot_config
 
@@ -73,6 +74,8 @@ class JointMotionBenchmark:
         self.physics_freq = args.physics_freq
         self.render_freq = args.render_freq
         self.control_freq = args.control_freq
+        self.resample = args.resample
+        self.original_control_freq = args.original_control_freq
         self.kp = args.kp
         self.kd = args.kd
         self.solver_type = args.solver_type
@@ -285,6 +288,29 @@ class JointMotionBenchmark:
                 for i, valid_idx in enumerate(valid_indices):
                     if values[valid_idx]:  # Only convert non-empty strings
                         joint_angles[i].append(float(values[valid_idx]))
+
+        if self.resample and self.original_control_freq != self.control_freq:
+            joint_angles = np.array(joint_angles)
+
+            # Check original trajectory length and new length to match target control freq
+            old_len, num_joints = joint_angles.shape
+            duration = old_len / self.original_control_freq
+            new_len = int(round(duration * self.control_freq))
+
+            # Create linspace for resample
+            old_times = np.linspace(0, duration, old_len, endpoint=False)
+            new_times = np.linspace(0, duration, new_len, endpoint=False)
+            # Cap new time and fill with last value
+            new_times = new_times[new_times <= old_times[-1]]
+            new_times = np.append(new_times, old_times[-1])
+            new_len = len(new_times)
+
+            # Resample
+            new_angles = np.zeros((new_len, num_joints), dtype=joint_angles.dtype)
+            for i in range(num_joints):
+                f = interp1d(old_times, joint_angles[:, i], kind="linear")
+                new_angles[:, i] = f(new_times)
+            joint_angles = new_angles.T.tolist()
 
         return joint_angles, self.joint_names
 

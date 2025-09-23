@@ -34,6 +34,12 @@ def main():
     parser.add_argument("--physics-freq", type=int, default=200, help="Physics timestep frequency")
     parser.add_argument("--render-freq", type=int, default=200, help="Render timestep frequency")
     parser.add_argument("--control-freq", type=int, default=50, help="Control timestep frequency")
+    parser.add_argument(
+        "--resample", action="store_true", default=False, help="Resample trajectory to match control frequency"
+    )
+    parser.add_argument(
+        "--original-control-freq", type=int, default=50, help="Control timestep frequency for original motion files"
+    )
     parser.add_argument("--kp", type=int, default=50, help="Joint stiffness for position-based control")
     parser.add_argument("--kd", type=int, default=1, help="Joint damping for position-based control")
     parser.add_argument("--solver-type", type=int, default=1, help="Solver type TGS = 1 PGS = 0")
