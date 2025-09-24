@@ -24,6 +24,7 @@ Articulation = None
 add_reference_to_stage = None
 create_new_stage = None
 capture_viewport_to_buffer = None
+create_prim = None
 
 
 def get_motion_files(motion_files_arg):
@@ -117,32 +118,39 @@ class JointMotionBenchmark:
 
     def _setup_simulation(self):
         """Set up the simulation environment."""
-        # 1. Set up basic paths
+        # Set up basic robot configuration
+        self.prim_path = "/World/Robot"
         if self.robot_name == "h1_2":
-            self.usd_path = os.path.join(self.repo_path, "assets/robot_env.usd")
-            self.prim_path = "/World/h1_2"
+            self.robot_usd_path = os.path.join(self.repo_path, "assets/h1_2/h1_2.usd")
+            self.robot_offset = [0.0, 0.0, 1.1]  # Default offset [x, y, z] in meters
         else:
             raise ValueError(f"Unsupported robot: {self.robot_name}. Only h1_2 is supported.")
 
-        # 2. Create and configure stage
+        # Create and configure stage
         create_new_stage()
+        stage = omni.usd.get_context().get_stage()
 
-        # 3. simulation config
+        # 4. Simulation config
         sim_params = {
             "gravity": [0, 0, -9.81],
             "solver_type": self.solver_type,
         }
 
-        # 4. Initialize world with physics configuration
+        # Initialize world with physics configuration
         self.world = World(
             physics_dt=self.physics_dt, rendering_dt=self.render_dt, stage_units_in_meters=1.0, sim_params=sim_params
         )
 
-        # 5. Load robot USD and configure stage
-        add_reference_to_stage(usd_path=self.usd_path, prim_path="/World")
-        stage = omni.usd.get_context().get_stage()
+        # Add default ground plane
+        self.world.scene.add_default_ground_plane()
 
-        # 6. Configure robot articulation view
+        # Load robot USD with offset
+        create_prim(
+            prim_path=self.prim_path, prim_type="Xform", usd_path=self.robot_usd_path, translation=self.robot_offset
+        )
+        log_message(f"Loaded robot {self.robot_name} from {self.robot_usd_path} with offset {self.robot_offset}")
+
+        # Configure robot articulation view
         self.robot = Articulation(prim_paths_expr=self.prim_path, name=self.robot_name)
         self.world.scene.add(self.robot)
 
@@ -156,7 +164,7 @@ class JointMotionBenchmark:
         )
         schemas.modify_articulation_root_properties(self.prim_path, articulation_props, stage)
 
-        # 7. Initialize physics simulation
+        # Initialize physics simulation
         self.world.reset()
         for _ in range(5):
             self.world.step(render=False)
@@ -315,18 +323,18 @@ class JointMotionBenchmark:
 
     def run_benchmark(self):
         """Run the benchmark for the current motion file"""
-        # 1. Load motion data
+        # Load motion data
         log_message(f"Loading motion data from {self.motion_file}...")
         joint_angles, joint_names = self._load_motion()
 
         log_message(f"Physics dt: {self.physics_dt}, Rendering dt: {self.physics_dt * self.divisor}")
         log_message(f"Expected log interval: {self.physics_dt * self.divisor}")
 
-        # 2. Reset world time and counter
+        # Reset world time and counter
         self.world.reset()
         self._config_controller()  # need to reconfig after world.reset()
 
-        # 3. Buffer to the motion start position
+        # Buffer to the motion start position
         BUFFER_TIME = 5.0
         buffer_control_steps = int(BUFFER_TIME / self.control_dt)
 
