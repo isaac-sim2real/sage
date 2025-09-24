@@ -34,6 +34,10 @@ Joint Motion Gap Framework combines:
   - [Simulation Output](#simulation-output)
   - [Real Robot Output](#real-robot-output)
   - [Processed Sim2Real Datasets](#processed-sim2real-datasets)
+- [Adding New Humanoids](#adding-new-humanoids)
+  - [Input Preparation](#input-preparation)
+  - [Simulation Setup](#simulation-setup)
+  - [Real Robot Integration](#real-robot-integration)
 - [Configuration](#configuration)
 - [Contributing](#contributing)
 - [License](#license)
@@ -170,6 +174,45 @@ After collecting both simulation and real robot data pairs, we process them into
 |------------|-------------|
 | unitree_h1_2 | [Unitree H1-2 Sim2Real Dataset](https://example.com/unitree_h1_2_dataset) |
 | realman_wr75s | [Realman WR75S Sim2Real Dataset](https://example.com/realman_wr75s_dataset) |
+
+## Adding New Humanoids
+
+This section describes how to extend the framework to support new humanoid robots.
+
+### Input Preparation
+
+**Motion Files:**
+Prepare retargeted motion files for your specific humanoid robot:
+- Follow the motion file format described in [Motion Files](#motion-files)
+- Ensure joint names match your robot's kinematic chain
+- Place files in `motion_files/{robot_name}/{source}/`
+- Joint angles must be in radians
+
+### Simulation Setup
+
+To add simulation support for a new humanoid:
+
+**1. Prepare USD Assets**
+- Add your robot's USD file to `assets/` directory
+- Import the robot into `assets/robot_env.usd` scene file
+- Ensure proper joint naming and hierarchy
+
+**2. Update Simulation Code**
+- Modify `joint_motion_gap/simulation.py`:
+  - Add robot name to supported robots list
+  - Configure USD path and prim path for your robot
+  - Adjust any robot-specific simulation parameters
+
+**3. Add Joint Configuration**
+- Create `configs/{robot_name}_joints.yaml` with complete joint list
+- Create `configs/{robot_name}_valid_joints.txt` with motion-relevant joints
+- Ensure joint names match both USD asset and motion files
+
+### Real Robot Integration
+
+**Status:** TBD (To Be Determined)
+
+Real robot integration steps will be documented as the framework evolves to support additional robots.
 
 ## Configuration
 
