@@ -122,7 +122,7 @@ class JointMotionBenchmark:
         self.prim_path = "/World/Robot"
         if self.robot_name == "h1_2":
             self.robot_usd_path = os.path.join(self.repo_path, "assets/h1_2/h1_2.usd")
-            self.robot_offset = [0.0, 0.0, 1.1]  # Default offset [x, y, z] in meters
+            self.robot_offset = [0.0, 0.0, 1.1]
         else:
             raise ValueError(f"Unsupported robot: {self.robot_name}. Only h1_2 is supported.")
 
