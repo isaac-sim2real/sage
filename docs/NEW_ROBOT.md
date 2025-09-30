@@ -216,20 +216,20 @@ left_shoulder_pitch_joint, left_shoulder_roll_joint, left_shoulder_yaw_joint, ..
 - Values must be in radians (not degrees)
 - Number of values per line must match the number of joints in header
 
-**Example motion file:** `<REPO_ROOT>/motion_files/gr1t2/custom/simple_wave.txt`
+**Example motion file:** `<REPO_ROOT>/motion_files/gr1t2/sample/simple_wave.txt`
 
 ### 4.3 Add Custom Motion Source
 
 If you're adding a new motion source category, update the argument parser in `<REPO_ROOT>/scripts/run_simulation.py`:
 
-1. **Locate the `main` function** and find the motion-source argument
+1. **Locate the `main` function** and find the `motion-source` argument
 2. **Add your new motion source** to the choices list:
 
 ```python
 parser.add_argument(
     "--motion-source",
     type=str,
-    choices=["amass", "custom", "your_new_source"],  # Add your source here
+    choices=["amass", "sample", "your_new_source"],  # Add your source here
     required=True,
     help="Source of the motion",
 )
@@ -245,8 +245,8 @@ After completing all steps, test your robot integration:
 cd <REPO_ROOT>
 ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --robot_name gr1t2 \
-    --motion_source custom \
-    --motion_files motion_files/gr1t2/custom/simple_wave.txt \
+    --motion_source sample \
+    --motion_files motion_files/gr1t2/sample/simple_wave.txt \
     --output_folder results \
     --control-freq 10 \
     --fix-root
@@ -261,7 +261,7 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
 - Robot spawns correctly above the ground
 - All specified joints move according to the motion file
 - No error messages about missing joints
-- Output files are generated in `<REPO_ROOT>/results/sim/gr1t2/custom/simple_wave/` (path will use your robot name)
+- Output files are generated in `<REPO_ROOT>/results/sim/gr1t2/sample/simple_wave/` (path will use your robot name)
   - `joint_list.txt`: Lists controlled joints
   - `control.csv`: Command positions over time
   - `state_motor.csv`: Actual joint states over time
