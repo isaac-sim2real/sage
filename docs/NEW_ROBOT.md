@@ -48,7 +48,7 @@ The GR1T2 model can be retrieved from [Fourier's GitHub repository](https://gith
      - Configure **Joint & Drives** and **Colliders** properties if necessary
 4. **Click Import** and wait for the process to complete
 
-![URDF Import Settings](images/urdf_import.png)
+![URDF Import Settings](images/urdf_import.png) \
 _Figure 1: URDF Import Settings in Isaac Sim_
 
 ### 1.2 Validate Asset
@@ -64,7 +64,7 @@ After converting to USD format, use Isaac Sim's **Asset Validator** to check for
    - **Fix any critical errors** that appear (typically related to materials, physics properties, or joint configurations)
    - Save the file for any changes
 
-![Asset Validator](images/asset_validator.png)
+![Asset Validator](images/asset_validator.png) \
 _Figure 2: Asset Validator Results_
 
 ### 1.3 Identify and Document Joint Names
@@ -87,7 +87,7 @@ left_elbow_pitch_joint
 ...
 ```
 
-![Joint Hierarchy](images/joint_hierarchy.png)
+![Joint Hierarchy](images/joint_hierarchy.png) \
 _Figure 3: Robot Joint Hierarchy in Stage Panel_
 
 ### 1.4 Test Initial Robot Z-Offset
@@ -108,7 +108,7 @@ _Figure 3: Robot Joint Hierarchy in Stage Panel_
    - Robot doesn't clip into the ground plane
 7. **Record the optimal Z-offset value** for use in Step 2
 
-![Robot Placement](images/robot_z_offset.png)
+![Robot Placement](images/robot_z_offset.png) \
 _Figure 4: Robot Z-Offset Testing_
 
 ## Step 2: Configure simulation.py
@@ -243,7 +243,7 @@ After completing all steps, test your robot integration:
 
 ```bash
 cd <REPO_ROOT>
-python scripts/run_simulation.py \
+${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --robot_name gr1t2 \
     --motion_source custom \
     --motion_files motion_files/gr1t2/custom/simple_wave.txt \
