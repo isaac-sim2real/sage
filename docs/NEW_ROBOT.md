@@ -57,8 +57,8 @@ After converting to USD format, use Isaac Sim's **Asset Validator** to check for
 
 1. **Open Isaac Sim**
 2. **Load your USD asset** (`<REPO_ROOT>/assets/GR1T2_nohand/GR1T2_nohand.usd`)
-3. **Run Asset Validator**:
-   - Go to `Window > Asset Validator`
+3. **Run [Asset Validator](https://docs.omniverse.nvidia.com/extensions/latest/ext_asset-validator.html)**:
+   - Go to `Window > Asset Validator` (or first enable it in `Window > Extensions`)
    - Select the validation to run
    - Click "Analyze"
    - **Fix any critical errors** that appear (typically related to materials, physics properties, or joint configurations)
