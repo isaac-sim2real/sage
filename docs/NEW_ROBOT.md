@@ -244,10 +244,11 @@ After completing all steps, test your robot integration:
 ```bash
 cd <REPO_ROOT>
 ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
-    --robot_name gr1t2 \
-    --motion_source sample \
-    --motion_files motion_files/gr1t2/sample/simple_wave.txt \
-    --output_folder results \
+    --robot-name gr1t2 \
+    --motion-source sample \
+    --motion-files motion_files/gr1t2/sample/simple_wave.txt \
+    --valid-joints-file configs/gr1t2_valid_joints.txt \
+    --output-folder results \
     --control-freq 10 \
     --fix-root
 ```
