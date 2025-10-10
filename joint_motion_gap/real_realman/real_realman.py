@@ -382,8 +382,8 @@ def convert_h5_to_csv(h5_file_path, output_dir):
         
         # Default joint names
         robot_joint_names = [
-            'L_joint_1', 'L_joint_2', 'L_joint_3', 'L_joint_4', 'L_joint_5', 'L_joint_6', 'L_joint_7',
-            'R_joint_1', 'R_joint_2', 'R_joint_3', 'R_joint_4', 'R_joint_5', 'R_joint_6', 'R_joint_7'
+            'L_joint1', 'L_joint2', 'L_joint3', 'L_joint4', 'L_joint5', 'L_joint6', 'L_joint7',
+            'R_joint1', 'R_joint2', 'R_joint3', 'R_joint4', 'R_joint5', 'R_joint6', 'R_joint7'
         ]
         
         # Save CSV files
