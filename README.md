@@ -32,6 +32,7 @@ SAGE combines:
 - [Usage](#usage)
   - [Simulation Execution](#simulation-execution)
   - [Data Analysis](#data-analysis)
+<<<<<<< HEAD
   - [Real Robot Integration (Coming Soon)](#real-robot-integration-coming-soon)
 - [Data Format](#data-format)
   - [Motion Files](#motion-files)
@@ -41,6 +42,8 @@ SAGE combines:
 - [Adding New Humanoids](#adding-new-humanoids)
   - [Input Preparation](#input-preparation)
   - [Simulation Setup](#simulation-setup)
+=======
+>>>>>>> bbc834b (Update three README files.)
   - [Real Robot Integration](#real-robot-integration)
 - [Configuration](#configuration)
   - [Files and Directories](#files-and-directories)
@@ -123,15 +126,12 @@ python scripts/run_analysis.py \
 - **Visualization plots** for individual joint comparisons (position, velocity, torque)
 - **Statistical boxplots** comparing simulation vs real robot performance
 
-### Real Robot Integration (Coming Soon)
+### Real Robot Integration
 
-```bash
-# Placeholder for future real robot execution
-python scripts/run_real.py \
-    --robot-name h1_2 \
-    --motion-files motion_files/h1_2/amass \
-    --output-folder output
-```
+Different robot manufacturers provide different control APIs. Here, we offer guidelines for integrating robots from **Unitree** and **Realman**.
+
+- **Unitree Robots**: Both Unitree G1 and H1 have been tested. For simulation integration instructions, please refer to [joint_motion_gap/real_unitree/README.md](joint_motion_gap/real_unitree/README.md).
+- **Realman Robots**: Realman G1 has been tested. For simulation integration instructions, please refer to [joint_motion_gap/real_realman/README.md](joint_motion_gap/real_realman/README.md).
 
 ## Data Format
 
