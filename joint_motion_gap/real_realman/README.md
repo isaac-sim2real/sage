@@ -1,12 +1,6 @@
-**TODO:**
-- [ ] 没有**1. Data Collection**的**ui.py**和**collect.py**文件，需要修改
-- [ ] **1. Data Collection**和**2. Robot Control**分别有record和collect部分，究竟是什么顺序？不太看得懂。
-- [ ] 最好补充一个**Directory Structure**部分
+# Realman Robot Motion Data Collection
 
-# Realman Robot Data Collection
-
-This project provides tools for collecting and processing motion data from the Realman robot.
-
+This project provides tools for collecting and processing motion data from Realman humanoid dual-arm robots. It supports loading motion sequences from TXT files and collecting real-time robot state data during motion execution.
 
 ## Installation
 
@@ -17,40 +11,62 @@ This project provides tools for collecting and processing motion data from the R
     ```
 2. **Install required packages:**
     ```bash
-    pip install numpy matplotlib h5py joblib scipy
+    pip install numpy matplotlib h5py joblib scipy pandas
     ```
-
 
 ## Usage
 
-### 1. Data Collection
+### Execute Motion and Collect Data
 
-- Run the UI to start collecting data. You can select the motion index in the interface:
-    ```bash
-    python ui.py
-    ```
-- Core data collection functions are defined in `collect.py`.
+```bash
+python real_realman.py
+```
 
-### 2. Robot Control
+Or use the main function:
 
-- The `realman_class.py` file defines classes for connecting and controlling the Realman robot (both Dual and Humanoid).
-- Use `data_record_humanoid.py` to run the robot and record motion data.
+```python
+from real_realman import real_realman_main
 
-### 3. Data Management
+real_realman_main(
+    txt_file_path='path/to/motion.txt',
+    save_data_path='path/to/output'
+)
+```
 
-- Save your motion files (with `.pickle` extension) in the `/data` directory.
-- Run results will be saved as `.h5` files in `/data/runs`.
+## Input Format
 
-### 4. Data Visualization
+### TXT Motion Files
+Motion files should be in CSV format:
+```
+L_joint1,L_joint2,L_joint3,L_joint4,L_joint5,L_joint6,L_joint7,R_joint1,R_joint2,R_joint3,R_joint4,R_joint5,R_joint6,R_joint7
+0.1,0.2,0.3,0.4,0.5,0.6,0.7,-0.1,-0.2,-0.3,-0.4,-0.5,-0.6,-0.7
+...
+```
 
-- Use `plot_from_hdf5.py` to visualize results from `.h5` files:
-    ```bash
-    python plot_from_hdf5.py
-    ```
-- Generated plots will be saved in the `plot_data` directory.
+- **First row**: Joint names (7 left arm + 7 right arm joints)
+- **Subsequent rows**: Joint angles in radians for each motion frame
+- **Frequency**: 50Hz
 
+## Output
 
-## Directory Structure
+The system generates CSV files for each motion:
+
+```
+output/
+└── motion_name/
+    ├── joint_list.txt      # List of joint names
+    ├── control.csv         # Command data sent to robot
+    ├── event.csv          # Motion events and timestamps  
+    └── state_motor.csv    # Actual robot state data
+```
+
+## Robot Configuration
+
+Default network settings:
+- **Left arm**: IP 192.168.1.188, Port 8080
+- **Right arm**: IP 192.168.1.188, Port 8576
+- **Control Frequency**: 200Hz
+- **Motion Frequency**: 50Hz
 
 
 

@@ -65,21 +65,70 @@ class MotionManager:
         self._load_current_motion()
     
     def _load_motion_database(self) -> None:
-        """Load all motion data from file"""
+        """Load motion data from file"""
         try:
             if not os.path.exists(self.motion_file_path):
                 raise FileNotFoundError(f"Motion file not found: {self.motion_file_path}")
             
-            with open(self.motion_file_path, 'rb') as f:
-                self.motion_data = joblib.load(f)
-            
-            self.motion_names = list(self.motion_data.keys())
-            print(f"Loaded {len(self.motion_names)} motions from {self.motion_file_path}")
+            # Check file format and load accordingly
+            if self.motion_file_path.endswith('.pkl'):
+                self._load_pkl_motion_database()
+            elif self.motion_file_path.endswith('.txt'):
+                self._load_txt_motion_database()
+            else:
+                raise ValueError(f"Unsupported file format: {self.motion_file_path}")
             
         except Exception as e:
             print(f"Failed to load motion database: {e}")
             self.motion_data = {}
             self.motion_names = []
+    
+    def _load_pkl_motion_database(self) -> None:
+        """Load motion data from pickle file"""
+        with open(self.motion_file_path, 'rb') as f:
+            self.motion_data = joblib.load(f)
+        
+        self.motion_names = list(self.motion_data.keys())
+        print(f"Loaded {len(self.motion_names)} motions from {self.motion_file_path}")
+    
+    def _load_txt_motion_database(self) -> None:
+        """Load motion data from TXT file"""
+        with open(self.motion_file_path, 'r') as f:
+            lines = f.readlines()
+        
+        if len(lines) < 2:
+            raise ValueError("TXT file must have at least 2 lines (header + data)")
+        
+        # Parse joint names from first line
+        joint_names = [name.strip() for name in lines[0].strip().split(',')]
+        
+        # Parse motion data from subsequent lines (skip first line)
+        motion_frames = []
+        for line in lines[1:]:
+            if not line.strip():  # Skip empty lines
+                continue
+            values = [float(val.strip()) for val in line.strip().split(',')]
+            if len(values) == len(joint_names):
+                motion_frames.append(values)
+        
+        if not motion_frames:
+            raise ValueError("No valid motion frames found in TXT file")
+        
+        # Convert to numpy array
+        dof_data = np.array(motion_frames, dtype=np.float32)
+        
+        # Create motion data structure - motion name is filename without extension
+        motion_name = os.path.splitext(os.path.basename(self.motion_file_path))[0]
+        self.motion_data = {
+            motion_name: {
+                'dof': dof_data,
+                'fps': 50,  # TXT files are at 50Hz
+                'joint_names': joint_names
+            }
+        }
+        
+        self.motion_names = [motion_name]
+        print(f"Loaded motion from TXT: {motion_name} ({dof_data.shape[0]} frames, {len(joint_names)} joints)")
     
     def _load_current_motion(self) -> None:
         """Load and interpolate current motion"""
@@ -146,6 +195,52 @@ class MotionManager:
         self.current_motion_index = (self.current_motion_index + 1) % len(self.motion_names)
         self._load_current_motion()
         return True
+    
+    def get_current_motion_info(self) -> Optional[Dict[str, Any]]:
+        """Get information about current motion"""
+        if not self.current_motion_info:
+            return None
+        
+        motion_data = self.motion_data.get(self.current_motion_info.name, {})
+        return {
+            'name': self.current_motion_info.name,
+            'total_frames': self.current_motion_info.total_frames,
+            'current_frame': self.current_motion_info.frame_counter,
+            'fps': self.current_motion_info.fps,
+            'duration': self.current_motion_info.total_frames / self.current_motion_info.fps,
+            'state': self.current_motion_info.state.value,
+            'playback_speed': self.current_motion_info.playback_speed,
+            'joint_names': motion_data.get('joint_names', []),
+            'num_joints': len(motion_data.get('joint_names', []))
+        }
+    
+    def get_motion_joint_names(self) -> Optional[list]:
+        """Get joint names for current motion"""
+        if not self.current_motion_info:
+            return None
+        
+        motion_data = self.motion_data.get(self.current_motion_info.name, {})
+        return motion_data.get('joint_names', [])
+    
+    def get_all_motion_names(self) -> list:
+        """Get list of all available motion names"""
+        return self.motion_names.copy()
+    
+    def set_motion_by_index(self, index: int) -> bool:
+        """Set current motion by index"""
+        if 0 <= index < len(self.motion_names):
+            self.current_motion_index = index
+            self._load_current_motion()
+            return True
+        return False
+    
+    def set_motion_by_name(self, name: str) -> bool:
+        """Set current motion by name"""
+        if name in self.motion_names:
+            self.current_motion_index = self.motion_names.index(name)
+            self._load_current_motion()
+            return True
+        return False
     
     def set_playback_speed(self, speed: float) -> None:
         """Set playback speed (0.1 to 2.0)"""
@@ -754,12 +849,18 @@ class MultiRobotMotionControlNode(Node):
             # Control loop timing
             time.sleep(1.0 / self.robot_config.control_frequency)
 
-def unitree_robot_main(args, output_dir):
+def unitree_robot_main(robot_name, motion_file, output_dir):
     """Main entry point"""
     
     # Get robot configuration
     try:
-        robot_config = get_robot_config(args.robot_name)
+        robot_config = get_robot_config(robot_name)
+        
+        # Set motion file path if provided
+        if motion_file:
+            robot_config.motion_file_path = motion_file
+            print(f"Using motion file: {motion_file}")
+        
         print_robot_info(robot_config)
     except ValueError as e:
         print(f"Error: {e}")
@@ -784,8 +885,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Multi-Robot Motion Data Collection Pipeline')
     parser.add_argument('--robot-name', '-r', type=str, default='g1', 
                        help='Robot type (g1 or h12). Default: g1')
+    parser.add_argument('--motion-file', '-m', type=str, 
+                       help='Path to motion TXT file to load')
+    parser.add_argument('--output-dir', '-o', type=str, default='./output',
+                       help='Output directory for CSV files. Default: ./output')
     parser.add_argument('--list-robots', '-l', action='store_true',
                        help='List available robots and exit')
     
     args = parser.parse_args()
-    unitree_robot_main(args)
+    
+    if args.list_robots:
+        print("Available robots:", list_available_robots())
+        exit(0)
+    
+    unitree_robot_main(args.robot_name, args.motion_file, args.output_dir)
