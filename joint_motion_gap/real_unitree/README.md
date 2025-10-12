@@ -46,8 +46,6 @@ unitree_robot_main(
 )
 ```
 
-### List Available Robots
-
 ## Input Format
 
 ### TXT Motion Files
