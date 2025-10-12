@@ -1,45 +1,91 @@
-**TODO:**
-- [ ] **Installation**需要add more details about installation of ROS2 and SDK to fill our Document
-- [ ] **3. Data Management**和**4. Data Visualization**需要同realman一样进行补充。
-- [ ] 最好补充一个**Directory Structure**部分
+# Unitree Robot Motion Data Collection
 
-# Unitree Robot G1 & H12 Data Collection
-
-This project provides tools for collecting and processing motion data from the Unitree robot.
-
+This project provides tools for collecting and processing motion data from Unitree humanoid robots (G1 and H1-2). It supports loading motion sequences from TXT files and collecting real-time robot state data during motion execution using ROS2.
 
 ## Installation
 
-Refer to [Unitree_ros2](https://github.com/unitreerobotics/unitree_ros2), we need install both the Unitree sdk and ros_foxy
+1. **Create and activate a Conda environment:**
+    ```bash
+    conda create -n unitree python=3.9
+    conda activate unitree
+    ```
 
+2. **Install ROS2 Foxy:**
+   Follow the official [ROS2 Foxy installation guide](https://docs.ros.org/en/foxy/Installation.html)
+
+3. **Install Unitree SDK:**
+   Refer to [Unitree_ros2](https://github.com/unitreerobotics/unitree_ros2) for detailed installation instructions
+
+4. **Install required Python packages:**
+    ```bash
+    pip install numpy scipy joblib
+    ```
 
 ## Usage
 
-### 1. Data Collection
+### Execute Motion and Collect Data
 
-A unified Python script manages data collection. The target robot can be specified via the `--robot` command-line interface (CLI) argument.
+For G1 robot:
+```bash
+python hardware_data_collect.py --robot-name g1 --motion-file path/to/motion.txt --output-dir ./output
+```
 
-- Collecting Data from G1
-    ```bash
-    python hardware_data_collect.py --robot g1
-    ```
+For H1-2 robot:
+```bash
+python hardware_data_collect.py --robot-name h12 --motion-file path/to/motion.txt --output-dir ./output
+```
 
-- Collecting Data from H1-2
-    ```bash
-    python hardware_data_collect.py --robot h12
-    ```
+Or use the main function:
+```python
+from hardware_data_collect import unitree_robot_main
 
-### 2. Output
+unitree_robot_main(
+    robot_name='g1',  # or 'h12'
+    motion_file='path/to/motion.txt',
+    output_dir='./output'
+)
+```
 
-Collected data will be saved in the `data/runs_csv` directory in a simulation-compatible format.
+### List Available Robots
 
-### 3. Data Management
+## Input Format
 
+### TXT Motion Files
+Motion files should be in CSV format:
+```
+joint1,joint2,joint3,joint4,joint5,joint6,...
+0.1,0.2,0.3,0.4,0.5,0.6,...
+0.2,0.3,0.4,0.5,0.6,0.7,...
+...
+```
 
-### 4. Data Visualization
+- **First row**: Joint names (varies by robot type)
+- **Subsequent rows**: Joint angles in radians for each motion frame
+- **Frequency**: 50Hz
 
+## Output
 
-## Directory Structure
+The system generates CSV files for each motion:
+
+```
+output/
+└── motion_name/
+    ├── joint_list.txt      # List of joint names
+    ├── control.csv         # Command data sent to robot
+    ├── event.csv          # Motion events and timestamps  
+    └── state_motor.csv    # Actual robot state data
+```
+
+## Robot Configuration
+
+### Supported Robots:
+- **G1**: Unitree G1 humanoid robot
+- **H1-2**: Unitree H1-2 humanoid robot
+
+### Default Settings:
+- **Control Frequency**: 200Hz
+- **Motion Frequency**: 50Hz
+- **ROS2 Topics**: `/lowcmd` (command), `/lowstate` (feedback)
 
 
 
