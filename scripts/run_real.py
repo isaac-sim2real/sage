@@ -1,14 +1,16 @@
-import os
 import argparse
+import os
 
-from joint_motion_gap.real_unitree.hardware_data_collect import unitree_robot_main
 from joint_motion_gap.real_realman.real_realman import real_realman_main
+from joint_motion_gap.real_unitree.hardware_data_collect import unitree_robot_main
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--robot-name', action='store', type=str, help='Robot name: realman, h12 or g1', required=False)
-    parser.add_argument('--motion-files', action='store', type=str, help='Motion file text', required=False)
-    parser.add_argument('--output-folder', action='store', type=str, help='Output folder for saving data', required=False)
+    parser.add_argument("--robot-name", action="store", type=str, help="Robot name: realman, h12 or g1", required=False)
+    parser.add_argument("--motion-files", action="store", type=str, help="Motion file text", required=False)
+    parser.add_argument(
+        "--output-folder", action="store", type=str, help="Output folder for saving data", required=False
+    )
     args = parser.parse_args()
 
     home_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -56,7 +56,7 @@ output/
 └── motion_name/
     ├── joint_list.txt      # List of joint names
     ├── control.csv         # Command data sent to robot
-    ├── event.csv          # Motion events and timestamps  
+    ├── event.csv          # Motion events and timestamps
     └── state_motor.csv    # Actual robot state data
 ```
 
@@ -67,8 +67,3 @@ Default network settings:
 - **Right arm**: IP 192.168.1.188, Port 8576
 - **Control Frequency**: 200Hz
 - **Motion Frequency**: 50Hz
-
-
-
-
-

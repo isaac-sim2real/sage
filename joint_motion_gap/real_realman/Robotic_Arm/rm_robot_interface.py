@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+# flake8: noqa: F405
 """
 @brief 机械臂Python接口
 @author Realman-Aisha
@@ -5,7 +7,7 @@
 
 @details
 此模块为机械臂提供了一个高易用性的Python接口，通过封装rm_ctypes_wrap模块中导入的C库接口实现。
-关键类：RoboticArm类，所有对机械臂的操作均通过此类进行。 
+关键类：RoboticArm类，所有对机械臂的操作均通过此类进行。
 
 **注意**
 - 在使用前，请确保已经根据环境正确配置了c版本的API库。
@@ -15,10 +17,11 @@
 **更新日志**:
 -
 """
-
-from .rm_ctypes_wrap import *
+# noqa: F405
 import ctypes
-from typing import Callable
+from typing import Optional
+
+from .rm_ctypes_wrap import *  # noqa: F401, F403, F405
 
 
 class JointConfigSettings:
@@ -339,7 +342,7 @@ class JointConfigReader:
                 - -3: 返回值解析失败，控制器返回的数据无法识别或不完整等情况。
             - list: 关节最大位置数组，长度机械臂的关节数，单位：°。
         """
-        if (self.arm_dof != 0):
+        if self.arm_dof != 0:
             max_pos = (c_float * self.arm_dof)()
         else:
             max_pos = (c_float * ARM_DOF)()
@@ -361,7 +364,7 @@ class JointConfigReader:
                 - -3: 返回值解析失败，控制器返回的数据无法识别或不完整等情况。
             - list: 关节最大速度值。
         """
-        if (self.arm_dof != 0):
+        if self.arm_dof != 0:
             speed = (c_float * self.arm_dof)()
         else:
             speed = (c_float * ARM_DOF)()
@@ -383,7 +386,7 @@ class JointConfigReader:
                 - -3: 返回值解析失败，控制器返回的数据无法识别或不完整等情况。
             - list: 各关节最大加速度值。
         """
-        if (self.arm_dof != 0):
+        if self.arm_dof != 0:
             acc = (c_float * self.arm_dof)()
         else:
             acc = (c_float * ARM_DOF)()
@@ -405,7 +408,7 @@ class JointConfigReader:
                 - -3: 返回值解析失败，控制器返回的数据无法识别或不完整等情况。
             - list: 关节最小位置数组，长度与机械臂的关节数，单位：°。
         """
-        if (self.arm_dof != 0):
+        if self.arm_dof != 0:
             min_pos = (c_float * self.arm_dof)()
         else:
             min_pos = (c_float * ARM_DOF)()
@@ -427,7 +430,7 @@ class JointConfigReader:
                 - -3: 返回值解析失败，控制器返回的数据无法识别或不完整等情况。
             - list: 关节最大位置数组，长度机械臂的关节数，单位：°。
         """
-        if (self.arm_dof != 0):
+        if self.arm_dof != 0:
             max_pos = (c_float * self.arm_dof)()
         else:
             max_pos = (c_float * ARM_DOF)()
@@ -448,7 +451,7 @@ class JointConfigReader:
                 - -3: 返回值解析失败，控制器返回的数据无法识别或不完整等情况。
             - list: 每个关节的使能状态数组，长度为机械臂的关节数，单位：°。
         """
-        if (self.arm_dof != 0):
+        if self.arm_dof != 0:
             en_state = (uint8_t * self.arm_dof)()
         else:
             en_state = (uint8_t * ARM_DOF)()
@@ -472,7 +475,7 @@ class JointConfigReader:
             - 'brake_state' (list[int]): 整数列表，表示每个关节的抱闸状态。
               如果arm_dof不为0，则列表长度为arm_dof；否则，使用默认的ARM_DOF长度。
         """
-        if (self.arm_dof != 0):
+        if self.arm_dof != 0:
             err_flag = (uint16_t * self.arm_dof)()
             brake_state = (uint16_t * self.arm_dof)()
         else:
@@ -482,9 +485,9 @@ class JointConfigReader:
         ret = rm_get_joint_err_flag(self.handle, err_flag, brake_state)
 
         result_dict = {
-            'return_code': ret,
-            'err_flag': list(err_flag),
-            'brake_state': list(brake_state),
+            "return_code": ret,
+            "err_flag": list(err_flag),
+            "brake_state": list(brake_state),
         }
 
         return result_dict
@@ -685,7 +688,7 @@ class ArmTipVelocityParameters:
         acc = c_float()
         ret = rm_get_arm_max_angular_acc(self.handle, byref(acc))
         return ret, acc.value
-    
+
     def rm_set_DH_data_default(self) -> int:
         """
         恢复机械臂默认 DH 参数
@@ -700,7 +703,7 @@ class ArmTipVelocityParameters:
         """
         tag = rm_set_DH_data_default(self.handle)
         return tag
-    
+
     def rm_set_DH_data(self, DH_data: rm_dh_t) -> int:
         """
         设置DH参数
@@ -734,6 +737,7 @@ class ArmTipVelocityParameters:
         DH_data = rm_dh_t()
         ret = rm_get_DH_data(self.handle, DH_data)
         return ret, DH_data.to_dict(self.dh_dof)
+
 
 class ToolCoordinateConfig:
     """
@@ -777,8 +781,7 @@ class ToolCoordinateConfig:
             - -2: 数据接收失败，通信过程中出现问题或者控制器超时没有返回。
             - -3: 返回值解析失败，接收到的数据格式不正确或不完整。
         """
-        tag = rm_generate_auto_tool_frame(
-            self.handle, tool_name, payload, x, y, z)
+        tag = rm_generate_auto_tool_frame(self.handle, tool_name, payload, x, y, z)
         return tag
 
     def rm_set_manual_tool_frame(self, frame: rm_frame_t) -> int:
@@ -868,15 +871,15 @@ class ToolCoordinateConfig:
             - 'tool_names' (list[str]): 字符串列表，表示所有工具坐标系名称。
             - 'len' (int): 工具坐标系名称数量。
         """
-        names = (rm_frame_name_t*10)()
+        names = (rm_frame_name_t * 10)()
         len_ = c_int()
         ret = rm_get_total_tool_frame(self.handle, names, byref(len_))
-        tool_names = [names[i].name.decode('utf-8') for i in range(len_.value)]
+        tool_names = [names[i].name.decode("utf-8") for i in range(len_.value)]
 
         result_dict = {
-            'return_code': ret,
-            'tool_names': tool_names,
-            'len': len_.value,
+            "return_code": ret,
+            "tool_names": tool_names,
+            "len": len_.value,
         }
 
         return result_dict
@@ -899,8 +902,7 @@ class ToolCoordinateConfig:
                 - dict: 工具坐标系字典，键为rm_frame_t的参数名。
         """
         tool_frame = rm_frame_t()
-        ret = rm_get_given_tool_frame(
-            self.handle, tool_name, byref(tool_frame))
+        ret = rm_get_given_tool_frame(self.handle, tool_name, byref(tool_frame))
 
         return ret, tool_frame.to_dictionary()
 
@@ -962,8 +964,7 @@ class ToolCoordinateConfig:
             - dict: 包络参数字典，包含了工具坐标系的包络参数信息。
         """
         envelope_balls = rm_envelope_balls_list_t()
-        ret = rm_get_tool_envelope(
-            self.handle, tool_name, byref(envelope_balls))
+        ret = rm_get_tool_envelope(self.handle, tool_name, byref(envelope_balls))
 
         return ret, envelope_balls.to_dictionary()
 
@@ -1088,13 +1089,13 @@ class WorkCoordinateConfig:
             - 'len' (int): 工作坐标系名称数量。
         """
         len_ = c_int()
-        names = (rm_frame_name_t*10)()
+        names = (rm_frame_name_t * 10)()
         ret = rm_get_total_work_frame(self.handle, names, byref(len_))
-        work_names = [names[i].name.decode('utf-8') for i in range(len_.value)]
+        work_names = [names[i].name.decode("utf-8") for i in range(len_.value)]
         result_dict = {
-            'return_code': ret,
-            'work_names': work_names,
-            'len': len_.value,
+            "return_code": ret,
+            "work_names": work_names,
+            "len": len_.value,
         }
 
         return result_dict
@@ -1336,15 +1337,14 @@ class ArmState:
         baudrate = c_int()
         timeout = c_int()
 
-        ret = rm_get_controller_RS485_mode(
-            self.handle, byref(mode), byref(baudrate), byref(timeout))
+        ret = rm_get_controller_RS485_mode(self.handle, byref(mode), byref(baudrate), byref(timeout))
 
         # 创建一个字典来存储返回值
         result_dict = {
-            'return_code': ret,
-            'mode': mode.value,
-            'baudrate': baudrate.value,
-            'timeout': timeout.value,
+            "return_code": ret,
+            "mode": mode.value,
+            "baudrate": baudrate.value,
+            "timeout": timeout.value,
         }
 
         return result_dict
@@ -1370,15 +1370,14 @@ class ArmState:
         baudrate = c_int()
         timeout = c_int()
 
-        ret = rm_get_tool_RS485_mode(self.handle, byref(
-            mode), byref(baudrate), byref(timeout))
+        ret = rm_get_tool_RS485_mode(self.handle, byref(mode), byref(baudrate), byref(timeout))
 
         # 创建一个字典来存储返回值
         result_dict = {
-            'return_code': ret,
-            'mode': mode.value,
-            'baudrate': baudrate.value,
-            'timeout': timeout.value,
+            "return_code": ret,
+            "mode": mode.value,
+            "baudrate": baudrate.value,
+            "timeout": timeout.value,
         }
 
         return result_dict
@@ -1463,7 +1462,7 @@ class MovePlan:
         tag = rm_movel(self.handle, po1, v, r, connect, block)
 
         return tag
-    
+
     def rm_movel_offset(self, offset: list[float], v: int, r: int, connect: int, frame_type: int, block: int) -> int:
         """
         笛卡尔空间直线偏移运动 (四代控制器支持)
@@ -1545,7 +1544,9 @@ class MovePlan:
 
         return tag
 
-    def rm_movec(self, pose_via: list[float], pose_to: list[float], v: int, r: int, loop: int, connect: int, block: int) -> int:
+    def rm_movec(
+        self, pose_via: list[float], pose_to: list[float], v: int, r: int, loop: int, connect: int, block: int
+    ) -> int:
         """
         笛卡尔空间圆弧运动
 
@@ -1624,7 +1625,9 @@ class MovePlan:
 
         return tag
 
-    def rm_movej_canfd(self, joint: list[float], follow: bool, expand: float = 0, trajectory_mode: int = 0, radio: int = 0) -> int:
+    def rm_movej_canfd(
+        self, joint: list[float], follow: bool, expand: float = 0, trajectory_mode: int = 0, radio: int = 0
+    ) -> int:
         """
         角度不经规划，直接通过CANFD透传给机械臂
         @details 角度透传到 CANFD，若指令正确，机械臂立即执行
@@ -2068,14 +2071,13 @@ class ArmMotionControl:
             data = (c_float * self.arm_dof)()
         else:
             data = (c_float * ARM_DOF)()
-        tag = rm_get_arm_current_trajectory(
-            self.handle, byref(plan_type), data)
+        tag = rm_get_arm_current_trajectory(self.handle, byref(plan_type), data)
 
         # 创建一个字典来存储返回值
         result_dict = {
-            'return_code': tag,
-            'trajectory_type': plan_type.value,
-            'data': list(data),
+            "return_code": tag,
+            "trajectory_type": plan_type.value,
+            "data": list(data),
         }
 
         return result_dict
@@ -2107,16 +2109,15 @@ class ControllerConfig:
         current = c_float()
         temperature = c_float()
         sys_err = c_int()
-        ret = rm_get_controller_state(self.handle, byref(voltage), byref(current),
-                                      byref(temperature), byref(sys_err))
+        ret = rm_get_controller_state(self.handle, byref(voltage), byref(current), byref(temperature), byref(sys_err))
 
         # 创建一个字典来存储返回值
         result_dict = {
-            'return_code': ret,
-            'voltage': voltage.value,
-            'current': current.value,
-            'temperature': temperature.value,
-            'system_error': sys_err.value,
+            "return_code": ret,
+            "voltage": voltage.value,
+            "current": current.value,
+            "temperature": temperature.value,
+            "system_error": sys_err.value,
         }
 
         return result_dict
@@ -2178,14 +2179,13 @@ class ControllerConfig:
         min = c_int()
         sec = c_int()
 
-        ret = rm_get_system_runtime(self.handle, byref(
-            day), byref(hour), byref(min), byref(sec))
+        ret = rm_get_system_runtime(self.handle, byref(day), byref(hour), byref(min), byref(sec))
         result_dict = {
-            'return_code': ret,
-            'day': day.value,
-            'hour': hour.value,
-            'min': min.value,
-            'sec': sec.value,
+            "return_code": ret,
+            "day": day.value,
+            "hour": hour.value,
+            "min": min.value,
+            "sec": sec.value,
         }
 
         return result_dict
@@ -2379,10 +2379,10 @@ class CommunicationConfig:
         mac = ctypes.create_string_buffer(255)
         ret = rm_get_wired_net(self.handle, ip, mask, mac)
         result_dict = {
-            'return_code': ret,
-            'ip': ip.value.decode(),
-            'mask': mask.value.decode(),
-            'mac': mac.value.decode(),
+            "return_code": ret,
+            "ip": ip.value.decode(),
+            "mask": mask.value.decode(),
+            "mac": mac.value.decode(),
         }
 
         return result_dict
@@ -2442,7 +2442,7 @@ class ControllerIOConfig:
     机械臂控制器提供IO端口，用于与外部设备交互。可查阅文档了解其数量分类等。
     """
 
-    def rm_set_io_mode(self, io_num: int, io_mode: int, io_speed: int=0, io_speed_mode: int=0) -> int:
+    def rm_set_io_mode(self, io_num: int, io_mode: int, io_speed: int = 0, io_speed_mode: int = 0) -> int:
         """
         Args:
             io_num (int): IO 端口号，范围：1~4
@@ -2464,7 +2464,9 @@ class ControllerIOConfig:
             - -2: 数据接收失败，通信过程中出现问题或者控制器超时没有返回。
             - -3: 返回值解析失败，接收到的数据格式不正确或不完整。
         """
-        config = rm_io_config_t(io_mode=io_mode, io_real_time_config_t=rm_io_real_time_config_t(io_speed, io_speed_mode))
+        config = rm_io_config_t(
+            io_mode=io_mode, io_real_time_config_t=rm_io_real_time_config_t(io_speed, io_speed_mode)
+        )
         tag = rm_set_IO_mode(self.handle, io_num, config)
         return tag
 
@@ -2593,11 +2595,13 @@ class ControllerIOConfig:
         tag = rm_get_voltage(self.handle, byref(voltage_type))
         return tag, voltage_type.value
 
+
 class EffectorIOConfig:
     """
-   末端工具IO
-    机械臂末端工具端提供多种IO端口，用于与外部设备交互。可查阅文档了解其数量分类等。
+    末端工具IO
+     机械臂末端工具端提供多种IO端口，用于与外部设备交互。可查阅文档了解其数量分类等。
     """
+
     def rm_set_tool_do_state(self, io_num: int, state: int) -> int:
         """
         设置工具端数字 IO 输出
@@ -2658,9 +2662,9 @@ class EffectorIOConfig:
         ret = rm_get_tool_IO_state(self.handle, mode, state)
 
         result_dict = {
-            'return_code': ret,
-            'IO_Mode': list(mode),
-            'IO_state': list(state),
+            "return_code": ret,
+            "IO_Mode": list(mode),
+            "IO_state": list(state),
         }
         return result_dict
 
@@ -2705,12 +2709,13 @@ class GripperControl:
     @details 睿尔曼机械臂末端配备了因时机器人公司的 EG2-4C2 手爪，为了便于用户操作手爪，机械臂控制器
     对用户开放了手爪的控制协议（手爪控制协议与末端modbus 功能互斥）
     """
+
     def rm_set_rm_plus_mode(self, mode: int) -> int:
         """
         设置末端生态协议模式
         Args:
             mode 末端生态协议模式
-            0：禁用协议 
+            0：禁用协议
             9600：开启协议（波特率9600）
             115200：开启协议（波特率115200）
             256000：开启协议（波特率256000）
@@ -2734,7 +2739,7 @@ class GripperControl:
             - -2: 数据接收失败，通信过程中出现问题或者控制器超时没有返回
             - -3: 返回值解析失败，接收到的数据格式不正确或不完整
             mode 末端生态协议模式
-            - 0：禁用协议 
+            - 0：禁用协议
             - 9600：开启协议（波特率9600）
             - 115200：开启协议（波特率115200）
             - 256000：开启协议（波特率256000）
@@ -2743,36 +2748,36 @@ class GripperControl:
         plus_mode_type = c_int()
         tag = rm_get_rm_plus_mode(self.handle, byref(plus_mode_type))
         return tag, plus_mode_type.value
-    
-    def rm_set_rm_plus_touch(self,mode: int) -> int:
+
+    def rm_set_rm_plus_touch(self, mode: int) -> int:
         """
         设置触觉传感器模式(末端生态协议支持)
         Args:
-            mode 触觉传感器开关状态 
-            0：关闭触觉传感器 
-            1：打开触觉传感器（返回处理后数据） 
+            mode 触觉传感器开关状态
+            0：关闭触觉传感器
+            1：打开触觉传感器（返回处理后数据）
             2：打开触觉传感器（返回原始数据）
         Returns:
             int 设置触觉传感器模式结果 0成功
         """
         tag = rm_set_rm_plus_touch(self.handle, mode)
         return tag
-    
-    def rm_get_rm_plus_touch(self) -> tuple[int,int]:
+
+    def rm_get_rm_plus_touch(self) -> tuple[int, int]:
         """
         查询触觉传感器模式(末端生态协议支持)
         Returns:
             -触觉传感器模式查询状态
-            -mode 触觉传感器开关状态 
-              0：关闭触觉传感器 
-              1：打开触觉传感器（返回处理后数据） 
+            -mode 触觉传感器开关状态
+              0：关闭触觉传感器
+              1：打开触觉传感器（返回处理后数据）
               2：打开触觉传感器（返回原始数据）
         """
         plus_touch_type = c_int()
         tag = rm_get_rm_plus_touch(self.handle, byref(plus_touch_type))
         return tag, plus_touch_type.value
 
-    def rm_get_rm_plus_base_info(self) -> tuple[int,dict[str, any]]:
+    def rm_get_rm_plus_base_info(self) -> tuple[int, dict[str, any]]:
         """
         读取末端设备基础信息(末端生态协议支持)
         Returns:
@@ -2782,7 +2787,7 @@ class GripperControl:
         base_info_type = rm_plus_base_info_t()
         tag = rm_get_rm_plus_base_info(self.handle, byref(base_info_type))
         return tag, base_info_type.to_dict()
-    
+
     def rm_get_rm_plus_state_info(self) -> tuple[int, dict[str, any]]:
         """
         读取末端设备实时信息(末端生态协议支持)
@@ -2793,7 +2798,6 @@ class GripperControl:
         state_info_type = rm_plus_state_info_t()
         tag = rm_get_rm_plus_state_info(self.handle, byref(state_info_type))
         return tag, state_info_type.to_dict()
-
 
     def rm_set_gripper_route(self, min_route: int, max_route: int) -> int:
         """
@@ -3022,8 +3026,7 @@ class Force:
             joint_positions = (c_float * self.arm_dof)(*joint)
         else:
             joint_positions = (c_float * ARM_DOF)(*joint)
-        tag = rm_manual_set_force(
-            self.handle, point_num, joint_positions, block)
+        tag = rm_manual_set_force(self.handle, point_num, joint_positions, block)
         return tag
 
     def rm_stop_set_force_sensor(self) -> int:
@@ -3119,8 +3122,7 @@ class Force:
         else:
             joint_positions1 = (c_float * ARM_DOF)(*joint1)
             joint_positions2 = (c_float * ARM_DOF)(*joint2)
-        tag = rm_manual_set_Fz(
-            self.handle, joint_positions1, joint_positions2, block)
+        tag = rm_manual_set_Fz(self.handle, joint_positions1, joint_positions2, block)
         return tag
 
 
@@ -3248,7 +3250,7 @@ class DragTeach:
         grade = c_int()
         tag = rm_get_drag_teach_sensitivity(self.handle, byref(grade))
         return tag, grade.value
-    
+
     def rm_drag_trajectory_origin(self, block: int) -> int:
         """
         运动到轨迹起点
@@ -3362,10 +3364,9 @@ class DragTeach:
             - -2: 数据接收失败，通信过程中出现问题或者控制器超时没有返回。
             - -3: 返回值解析失败，接收到的数据格式不正确或不完整。
         """
-        tag = rm_set_force_position(
-            self.handle, sensor, mode, direction, force)
+        tag = rm_set_force_position(self.handle, sensor, mode, direction, force)
         return tag
-    
+
     def rm_set_force_position_new(self, param: rm_force_position_t) -> int:
         """
         力位混合控制-新参数
@@ -3419,7 +3420,7 @@ class DragTeach:
         num = c_int()
         tag = rm_save_trajectory(self.handle, file_path, byref(num))
         return tag, num.value
-    
+
     def rm_set_force_drag_mode(self, mode: int) -> int:
         """
         设置六维力拖动示教模式
@@ -3456,7 +3457,7 @@ class DragTeach:
         mode = c_int()
         tag = rm_get_force_drag_mode(self.handle, byref(mode))
         return tag, mode.value
-    
+
 
 class HandControl:
     """
@@ -3507,7 +3508,7 @@ class HandControl:
         tag = rm_set_hand_seq(self.handle, seq_num, block, timeout)
         return tag
 
-    def rm_set_hand_angle(self, hand_angle: list[int], block:bool, timeout: int) -> int:
+    def rm_set_hand_angle(self, hand_angle: list[int], block: bool, timeout: int) -> int:
         """
         设置灵巧手各自由度角度
         @details 设置灵巧手角度，灵巧手有6个自由度，从1~6分别为小拇指，无名指，中指，食指，大拇指弯曲，大拇指旋转
@@ -3524,13 +3525,13 @@ class HandControl:
             - -2: 数据接收失败，通信过程中出现问题或者控制器超时没有返回。
             - -3: 返回值解析失败，接收到的数据格式不正确或不完整。
             - -4: 当前到位设备校验失败，即当前到位设备不为灵巧手
-            - -5: 超时未返回。 
+            - -5: 超时未返回。
         """
         angle = (c_int * 6)(*hand_angle)
         tag = rm_set_hand_angle(self.handle, angle, block, timeout)
         return tag
 
-    def rm_set_hand_follow_angle(self, hand_angle: list[int], block:bool) -> int:
+    def rm_set_hand_follow_angle(self, hand_angle: list[int], block: bool) -> int:
         """
         设置灵巧手角度跟随控制
         @details 设置灵巧手跟随角度，灵巧手有6个自由度，从1~6分别为小拇指，无名指，中指，食指，大拇指弯曲，大拇指旋转
@@ -3550,7 +3551,7 @@ class HandControl:
         tag = rm_set_hand_follow_angle(self.handle, angle, block)
         return tag
 
-    def rm_set_hand_follow_pos(self, hand_pos: list[int], block:bool) -> int:
+    def rm_set_hand_follow_pos(self, hand_pos: list[int], block: bool) -> int:
         """
         设置灵巧手位置跟随控制
         @details 设置灵巧手跟随角度，灵巧手有6个自由度，从1~6分别为小拇指，无名指，中指，食指，大拇指弯曲，大拇指旋转
@@ -3569,7 +3570,7 @@ class HandControl:
         pos = (c_int * 6)(*hand_pos)
         tag = rm_set_hand_follow_pos(self.handle, pos, block)
         return tag
-    
+
     def rm_set_hand_speed(self, speed: int) -> int:
         """
         设置灵巧手速度
@@ -3747,7 +3748,8 @@ class ModbusConfig:
         读保持寄存器
 
         Args:
-            read_params (rm_peripheral_read_write_params_t): 保持寄存器数据读取参数结构体，该指令每次只能读 1 个寄存器，即 2 个字节的数据，不可一次性读取多个寄存器数据，该结构体成员num无需设置
+            read_params (rm_peripheral_read_write_params_t): 保持寄存器数据读取参数结构体，该指令每次只能读 1 个寄存器，
+            即 2 个字节的数据，不可一次性读取多个寄存器数据，该结构体成员num无需设置
 
         Returns:
             tuple[int,int]: 包含两个元素的元组
@@ -3769,7 +3771,8 @@ class ModbusConfig:
         读输入寄存器
 
         Args:
-            read_params (rm_peripheral_read_write_params_t): 输入寄存器数据读取参数结构体，该指令每次只能读 1 个寄存器，即 2 个字节的数据，不可一次性读取多个寄存器数据，该结构体成员num无需设置
+            read_params (rm_peripheral_read_write_params_t): 输入寄存器数据读取参数结构体，该指令每次只能读 1 个寄存器，
+            即 2 个字节的数据，不可一次性读取多个寄存器数据，该结构体成员num无需设置
 
         Returns:
             tuple[int,int]: 包含两个元素的元组
@@ -3875,7 +3878,8 @@ class ModbusConfig:
         读多圈数据
 
         Args:
-            read_params (rm_peripheral_read_write_params_t): 多圈数据读取参数结构体，要读的线圈的数量 8< num <= 120，该指令最多一次性支持读 120 个线圈数据， 即 15 个 byte
+            read_params (rm_peripheral_read_write_params_t): 多圈数据读取参数结构体，要读的线圈的数量
+            8< num <= 120，该指令最多一次性支持读 120 个线圈数据， 即 15 个 byte
 
         Returns:
             tuple[int,list[int]]: 包含两个元素的元组
@@ -3888,17 +3892,20 @@ class ModbusConfig:
                 - -4: 四代控制器不支持该接口
             - list[int]: 返回线圈状态列表，数据类型：int8
         """
-        data_num = int(read_params.num//8+1)
+        data_num = int(read_params.num // 8 + 1)
         data = (c_int * data_num)()
         tag = rm_read_multiple_coils(self.handle, read_params, data)
         return tag, list(data)
 
-    def rm_read_multiple_holding_registers(self, read_params: rm_peripheral_read_write_params_t) -> tuple[int, list[int]]:
+    def rm_read_multiple_holding_registers(
+        self, read_params: rm_peripheral_read_write_params_t
+    ) -> tuple[int, list[int]]:
         """
         读多个保存寄存器
 
         Args:
-            read_params (rm_peripheral_read_write_params_t): 多个保存寄存器读取参数结构体，要读的寄存器的数量 2 < num < 13，该指令最多一次性支持读 12 个寄存器数据， 即 24 个 byte
+            read_params (rm_peripheral_read_write_params_t): 多个保存寄存器读取参数结构体，要读的寄存器的数量
+            2 < num < 13，该指令最多一次性支持读 12 个寄存器数据， 即 24 个 byte
 
         Returns:
             tuple[int,list[int]]: 包含两个元素的元组
@@ -3913,8 +3920,7 @@ class ModbusConfig:
         """
         data_num = int(read_params.num * 2)
         data = (c_int * data_num)()
-        tag = rm_read_multiple_holding_registers(
-            self.handle, read_params, data)
+        tag = rm_read_multiple_holding_registers(self.handle, read_params, data)
         return tag, list(data)
 
     def rm_read_multiple_input_registers(self, read_params: rm_peripheral_read_write_params_t) -> tuple[int, list[int]]:
@@ -3922,7 +3928,8 @@ class ModbusConfig:
         读多个输入寄存器
 
         Args:
-            read_params (rm_peripheral_read_write_params_t): 多个输入寄存器读取参数结构体。要读的寄存器的数量 2 < num < 13，该指令最多一次性支持读 12 个寄存器数据， 即 24 个 byte
+            read_params (rm_peripheral_read_write_params_t): 多个输入寄存器读取参数结构体。要读的寄存器的数量
+            2 < num < 13，该指令最多一次性支持读 12 个寄存器数据， 即 24 个 byte
 
         Returns:
             tuple[int,list[int]]: 包含两个元素的元组
@@ -3937,8 +3944,7 @@ class ModbusConfig:
         """
         data_num = int(read_params.num * 2)
         data = (c_int * data_num)()
-        tag = rm_read_multiple_input_registers(
-            self.handle, read_params, data)
+        tag = rm_read_multiple_input_registers(self.handle, read_params, data)
         return tag, list(data)
 
 
@@ -3992,10 +3998,10 @@ class InstallPos:
 
         # 创建一个字典来存储返回值
         result_dict = {
-            'return_code': ret,
-            'x': x.value,
-            'y': y.value,
-            'z': z.value,
+            "return_code": ret,
+            "x": x.value,
+            "y": y.value,
+            "z": z.value,
         }
 
         return result_dict
@@ -4025,13 +4031,13 @@ class InstallPos:
 
         ret = rm_get_joint_software_version(self.handle, version, joints_v)
         result_dict = {}
-        if(self.robot_controller_version == 3):
-            result_dict['version'] = [version[i] for i in range(self.arm_dof)]
+        if self.robot_controller_version == 3:
+            result_dict["version"] = [version[i] for i in range(self.arm_dof)]
         else:
-            result_dict['joints_v'] = [joints_v[i].version.decode('utf-8') for i in range(self.arm_dof)]
+            result_dict["joints_v"] = [joints_v[i].version.decode("utf-8") for i in range(self.arm_dof)]
         return ret, result_dict
 
-    def rm_get_tool_software_version(self) -> tuple[int,dict[str,any]]:
+    def rm_get_tool_software_version(self) -> tuple[int, dict[str, any]]:
         """
         查询末端接口板软件版本号
 
@@ -4052,17 +4058,16 @@ class InstallPos:
 
         ret = rm_get_tool_software_version(self.handle, byref(version), byref(tool_v))
         result_dict = {}
-        if(self.robot_controller_version == 3):
-            result_dict['version'] = version.value
+        if self.robot_controller_version == 3:
+            result_dict["version"] = version.value
         else:
-            result_dict['tool_v'] = tool_v.version.decode('utf-8')
+            result_dict["tool_v"] = tool_v.version.decode("utf-8")
 
-        return ret,result_dict
+        return ret, result_dict
 
 
 class ForcePositionControl:
-    """透传力位混合控制补偿
-    """
+    """透传力位混合控制补偿"""
 
     def rm_start_force_position_move(self) -> int:
         """
@@ -4094,7 +4099,9 @@ class ForcePositionControl:
         tag = rm_stop_force_position_move(self.handle)
         return tag
 
-    def rm_force_position_move_joint(self, joint: list[float], sensor: int, mode: int, dir: int, force: float, follow: bool) -> int:
+    def rm_force_position_move_joint(
+        self, joint: list[float], sensor: int, mode: int, dir: int, force: float, follow: bool
+    ) -> int:
         """
         透传力位混合补偿-角度方式
 
@@ -4118,11 +4125,12 @@ class ForcePositionControl:
             joint = (c_float * self.arm_dof)(*joint)
         else:
             joint = (c_float * ARM_DOF)(*joint)
-        tag = rm_force_position_move_joint(
-            self.handle, joint, sensor, mode, dir, force, follow)
+        tag = rm_force_position_move_joint(self.handle, joint, sensor, mode, dir, force, follow)
         return tag
 
-    def rm_force_position_move_pose(self, pose: list[float], sensor: int, mode: int, dir: int, force: float, follow: bool) -> int:
+    def rm_force_position_move_pose(
+        self, pose: list[float], sensor: int, mode: int, dir: int, force: float, follow: bool
+    ) -> int:
         """
         透传力位混合补偿-位姿方式
 
@@ -4153,11 +4161,10 @@ class ForcePositionControl:
             po1.euler = rm_euler_t(*pose[3:])
         else:
             print("Error: pose length is error.")
-        tag = rm_force_position_move_pose(
-            self.handle, po1, sensor, mode, dir, force, follow)
+        tag = rm_force_position_move_pose(self.handle, po1, sensor, mode, dir, force, follow)
         return tag
 
-    def rm_force_position_move(self, param:rm_force_position_move_t) -> int:
+    def rm_force_position_move(self, param: rm_force_position_move_t) -> int:
         """透传力位混合补偿-新参数
 
         Args:
@@ -4175,9 +4182,9 @@ class ForcePositionControl:
         tag = rm_force_position_move(self.handle, param)
         return tag
 
+
 class LiftControl:
-    """升降机构控制
-    """
+    """升降机构控制"""
 
     def rm_set_lift_speed(self, speed: int) -> int:
         """
@@ -4246,8 +4253,7 @@ class LiftControl:
 
 
 class ExpandControl:
-    """扩展关节控制
-    """
+    """扩展关节控制"""
 
     def rm_set_expand_speed(self, speed: int) -> int:
         """
@@ -4360,7 +4366,9 @@ class ProjectManagement:
         tag = rm_set_plan_speed(self.handle, speed)
         return tag
 
-    def rm_get_program_trajectory_list(self, page_num: int, page_size: int, vague_search: str) -> tuple[int, dict[str, any]]:
+    def rm_get_program_trajectory_list(
+        self, page_num: int, page_size: int, vague_search: str
+    ) -> tuple[int, dict[str, any]]:
         """
         获取在线编程列表
 
@@ -4380,8 +4388,7 @@ class ProjectManagement:
                 -dict[str,any] 获取到的在线编程列表字典，键为rm_program_trajectorys_t结构体的字段名称
         """
         trajectorys = rm_program_trajectorys_t()
-        ret = rm_get_program_trajectory_list(
-            self.handle, page_num, page_size, vague_search, byref(trajectorys))
+        ret = rm_get_program_trajectory_list(self.handle, page_num, page_size, vague_search, byref(trajectorys))
         return ret, trajectorys.to_dict()
 
     def rm_set_program_id_run(self, tra_id: int, speed: int, timeout: int) -> int:
@@ -4428,7 +4435,7 @@ class ProjectManagement:
         run_state = rm_program_run_state_t()
         ret = rm_get_program_run_state(self.handle, byref(run_state))
         return ret, run_state.to_dict()
-    
+
     def rm_get_flowchart_program_run_state(self) -> tuple[int, dict[str, any]]:
         """
         查询流程图编程运行状态
@@ -4600,11 +4607,12 @@ class GlobalWaypointManage:
                 -dict[str,any] 返回指定全局路点的参数字典，键为rm_waypoint_t结构体的字段名称
         """
         waypoint = rm_waypoint_t()
-        tag = rm_get_given_global_waypoint(
-            self.handle, point_name, byref(waypoint))
+        tag = rm_get_given_global_waypoint(self.handle, point_name, byref(waypoint))
         return tag, waypoint.to_dict()
 
-    def rm_get_global_waypoints_list(self, page_num: int, page_size: int, vague_search: str) -> tuple[int, dict[str, any]]:
+    def rm_get_global_waypoints_list(
+        self, page_num: int, page_size: int, vague_search: str
+    ) -> tuple[int, dict[str, any]]:
         """
         查询多个全局路点
 
@@ -4624,8 +4632,7 @@ class GlobalWaypointManage:
                 -dict[str,any] 返回符合条件的全局路点列表字典，键为rm_waypoint_list_t结构体的字段名称
         """
         waypoint_list = rm_waypoint_list_t()
-        ret = rm_get_global_waypoints_list(
-            self.handle, page_num, page_size, vague_search, byref(waypoint_list))
+        ret = rm_get_global_waypoints_list(self.handle, page_num, page_size, vague_search, byref(waypoint_list))
         return ret, waypoint_list.to_dict()
 
 
@@ -4721,14 +4728,12 @@ class ElectronicFenceConfig:
         max_len = 10
         names = (rm_fence_names_t * max_len)()
         length = c_int()
-        ret = rm_get_electronic_fence_list_names(
-            self.handle, names, byref(length))
-        job_names = [names[i].name.decode('utf-8')
-                     for i in range(length.value)]
+        ret = rm_get_electronic_fence_list_names(self.handle, names, byref(length))
+        job_names = [names[i].name.decode("utf-8") for i in range(length.value)]
         result_dict = {
-            'return_code': ret,
-            'job_names': job_names,
-            'len': length.value,
+            "return_code": ret,
+            "job_names": job_names,
+            "len": length.value,
         }
 
         return result_dict
@@ -4751,8 +4756,7 @@ class ElectronicFenceConfig:
                 -dict[str,any] 返回指定几何模型的参数字典，键为rm_fence_config_t结构体的字段名称
         """
         config = rm_fence_config_t()
-        ret = rm_get_given_electronic_fence_config(
-            self.handle, name, byref(config))
+        ret = rm_get_given_electronic_fence_config(self.handle, name, byref(config))
         return ret, config.to_dict()
 
     def rm_get_electronic_fence_list_infos(self) -> dict[str, any]:
@@ -4772,12 +4776,11 @@ class ElectronicFenceConfig:
         """
         infos = rm_fence_config_list_t()
         length = c_int()
-        ret = rm_get_electronic_fence_list_infos(
-            self.handle, byref(infos), byref(length))
+        ret = rm_get_electronic_fence_list_infos(self.handle, byref(infos), byref(length))
         result_dict = {
-            'return_code': ret,
-            'electronic_fence_list': [infos.config[i].to_dict() for i in range(length.value)],
-            'len': length.value,
+            "return_code": ret,
+            "electronic_fence_list": [infos.config[i].to_dict() for i in range(length.value)],
+            "len": length.value,
         }
 
         return result_dict
@@ -4797,8 +4800,7 @@ class ElectronicFenceConfig:
             - -2: 数据接收失败，通信过程中出现问题或者控制器超时没有返回。
             - -3: 返回值解析失败，接收到的数据格式不正确或不完整。
         """
-        tag = rm_set_electronic_fence_enable(
-            self.handle, electronic_fence_enable)
+        tag = rm_set_electronic_fence_enable(self.handle, electronic_fence_enable)
         return tag
 
     def rm_get_electronic_fence_enable(self) -> tuple[int, dict[str, any]]:
@@ -4970,7 +4972,7 @@ class SelfCollision:
         enable = c_bool()
         tag = rm_get_self_collision_enable(self.handle, byref(enable))
         return tag, enable.value
-  
+
 
 class UdpConfig:
     """
@@ -5016,14 +5018,14 @@ class UdpConfig:
         tag = rm_get_realtime_push(self.handle, byref(config))
         return tag, config.to_dict()
 
-    def rm_realtime_arm_state_call_back(self, arm_state_callback:rm_realtime_arm_state_callback_ptr):
+    def rm_realtime_arm_state_call_back(self, arm_state_callback: rm_realtime_arm_state_callback_ptr):
         """
         注册UDP机械臂实时状态主动上报信息回调函数，该回调函数接收rm_realtime_arm_joint_state_t类型数据
         作为参数，没有返回值
         当使用三线程，并且UDP机械臂状态主动上报正确配置时，数据会以设定的周期返回
 
         Args:
-            arm_state_callback (rm_realtime_arm_state_callback_ptr): 
+            arm_state_callback (rm_realtime_arm_state_callback_ptr):
                 机械臂实时状态信息回调函数
 
         Notes:
@@ -5040,7 +5042,10 @@ class TrajectoryManage:
     @details 轨迹管理功能可以对机械臂的拖动示教轨迹进行管理，包括添加、删除、查询等操作。用户可以通过这些接口，实现对机械臂拖动示教轨迹的增删改查操作，
     从而实现对机械臂运动轨迹的管理和控制。
     """
-    def rm_get_trajectory_file_list(self, page_num: int, page_size: int, vague_search: str) -> tuple[int, dict[str, any]]:
+
+    def rm_get_trajectory_file_list(
+        self, page_num: int, page_size: int, vague_search: str
+    ) -> tuple[int, dict[str, any]]:
         """
         查询多个拖动示教轨迹
         Args:
@@ -5059,8 +5064,7 @@ class TrajectoryManage:
                 -dict[str,any] 返回符合条件的拖动示教轨迹列表字典，键为rm_trajectory_list_t结构体的字段名称
         """
         trajectory_list = rm_trajectory_list_t()
-        ret = rm_get_trajectory_file_list(
-            self.handle, page_num, page_size, vague_search, byref(trajectory_list))
+        ret = rm_get_trajectory_file_list(self.handle, page_num, page_size, vague_search, byref(trajectory_list))
         return ret, trajectory_list.to_dict()
 
     def rm_set_run_trajectory(self, trajectory_name: str) -> int:
@@ -5079,7 +5083,7 @@ class TrajectoryManage:
         """
         tag = rm_set_run_trajectory(self.handle, trajectory_name)
         return tag
-    
+
     def rm_delete_trajectory_file(self, trajectory_name: str) -> int:
         """
         删除指定拖动示教轨迹
@@ -5113,13 +5117,14 @@ class TrajectoryManage:
         """
         tag = rm_save_trajectory_file(self.handle, trajectory_name)
         return tag
-    
+
 
 class ModbusV4:
     """四代控制器Modbus接口类
     @details 四代控制器Modbus接口类，可通过该类提供的接口，实现对四代控制器的Modbus功能的控制。
     @attention 仅在四代控制器上可用。
     """
+
     def rm_add_modbus_tcp_master(self, modbus_tcp_master: rm_modbus_tcp_master_info_t) -> int:
         """
         添加Modbus TCP主站
@@ -5136,8 +5141,8 @@ class ModbusV4:
         """
         tag = rm_add_modbus_tcp_master(self.handle, modbus_tcp_master)
         return tag
-    
-    def rm_update_modbus_tcp_master(self, master_name:str, modbus_tcp_master: rm_modbus_tcp_master_info_t) -> int:
+
+    def rm_update_modbus_tcp_master(self, master_name: str, modbus_tcp_master: rm_modbus_tcp_master_info_t) -> int:
         """
         更新Modbus TCP主站
         Args:
@@ -5154,8 +5159,8 @@ class ModbusV4:
         """
         tag = rm_update_modbus_tcp_master(self.handle, master_name, modbus_tcp_master)
         return tag
-    
-    def rm_delete_modbus_tcp_master(self, master_name:str) -> int:
+
+    def rm_delete_modbus_tcp_master(self, master_name: str) -> int:
         """
         删除Modbus TCP主站
         Args:
@@ -5172,7 +5177,7 @@ class ModbusV4:
         tag = rm_delete_modbus_tcp_master(self.handle, master_name)
         return tag
 
-    def rm_get_modbus_tcp_master(self, master_name:str) -> tuple[int, dict[str, any]]:
+    def rm_get_modbus_tcp_master(self, master_name: str) -> tuple[int, dict[str, any]]:
         """
         查询Modbus TCP主站
         Returns:
@@ -5189,8 +5194,10 @@ class ModbusV4:
         master_info = rm_modbus_tcp_master_info_t()
         tag = rm_get_modbus_tcp_master(self.handle, master_name, byref(master_info))
         return tag, master_info.to_dict()
-    
-    def rm_get_modbus_tcp_master_list(self, page_num: int, page_size: int, vague_search: str) -> tuple[int, dict[str, any]]:
+
+    def rm_get_modbus_tcp_master_list(
+        self, page_num: int, page_size: int, vague_search: str
+    ) -> tuple[int, dict[str, any]]:
         """
         查询多个Modbus TCP主站
         Args:
@@ -5211,8 +5218,8 @@ class ModbusV4:
         master_list = rm_modbus_tcp_master_list_t()
         tag = rm_get_modbus_tcp_master_list(self.handle, page_num, page_size, vague_search, byref(master_list))
         return tag, master_list.to_dict()
-    
-    def rm_set_controller_rs485_mode(self, mode:int, baudrate:int) -> int:
+
+    def rm_set_controller_rs485_mode(self, mode: int, baudrate: int) -> int:
         """
         设置控制器RS485模式
         Args:
@@ -5229,7 +5236,7 @@ class ModbusV4:
         """
         tag = rm_set_controller_rs485_mode(self.handle, mode, baudrate)
         return tag
-    
+
     def rm_get_controller_rs485_mode_v4(self) -> tuple[int, dict[str, any]]:
         """
         获取控制器RS485模式
@@ -5249,9 +5256,9 @@ class ModbusV4:
         mode = c_int()
         baudrate = c_int()
         tag = rm_get_controller_rs485_mode_v4(self.handle, byref(mode), byref(baudrate))
-        return tag, {'mode':mode.value, 'baudrate':baudrate.value}
-    
-    def rm_set_tool_rs485_mode(self, mode:int, baudrate:int) -> int:
+        return tag, {"mode": mode.value, "baudrate": baudrate.value}
+
+    def rm_set_tool_rs485_mode(self, mode: int, baudrate: int) -> int:
         """
         设置工具端RS485模式(四代控制器支持)
         Args:
@@ -5288,29 +5295,29 @@ class ModbusV4:
         mode = c_int()
         baudrate = c_int()
         tag = rm_get_tool_rs485_mode_v4(self.handle, byref(mode), byref(baudrate))
-        return tag, {'mode':mode.value, 'baudrate':baudrate.value}
-    
-    def rm_read_modbus_rtu_coils(self, param:rm_modbus_rtu_read_params_t) -> tuple[int, list[int]]:
+        return tag, {"mode": mode.value, "baudrate": baudrate.value}
+
+    def rm_read_modbus_rtu_coils(self, param: rm_modbus_rtu_read_params_t) -> tuple[int, list[int]]:
         """
-       Modbus RTU协议读线圈
-        Args:
-            param (rm_modbus_rtu_read_params_t): Modbus RTU读取参数结构体
-        Returns:
-            tuple[int,list[int]]: 包含两个元素的元组。
-                -int 函数执行的状态码。
-                    - 0: 成功。
-                    - 1: 控制器返回false，参数错误或机械臂状态发生错误。
-                    - -1: 数据发送失败，通信过程中出现问题。
-                    - -2: 数据接收失败，通信过程中出现问题或者控制器超时没有返回。
-                    - -3: 返回值解析失败，控制器返回的数据无法识别或不完整等情况。
-                    - -4: 三代控制器不支持该接口
-                -list[int] 返回读线圈数据，数组大小为param.num
+        Modbus RTU协议读线圈
+         Args:
+             param (rm_modbus_rtu_read_params_t): Modbus RTU读取参数结构体
+         Returns:
+             tuple[int,list[int]]: 包含两个元素的元组。
+                 -int 函数执行的状态码。
+                     - 0: 成功。
+                     - 1: 控制器返回false，参数错误或机械臂状态发生错误。
+                     - -1: 数据发送失败，通信过程中出现问题。
+                     - -2: 数据接收失败，通信过程中出现问题或者控制器超时没有返回。
+                     - -3: 返回值解析失败，控制器返回的数据无法识别或不完整等情况。
+                     - -4: 三代控制器不支持该接口
+                 -list[int] 返回读线圈数据，数组大小为param.num
         """
         data = (c_int * param.num)()
         tag = rm_read_modbus_rtu_coils(self.handle, param, data)
         return tag, [data[i] for i in range(param.num)]
-    
-    def rm_write_modbus_rtu_coils(self, param:rm_modbus_rtu_write_params_t) -> int:
+
+    def rm_write_modbus_rtu_coils(self, param: rm_modbus_rtu_write_params_t) -> int:
         """
         Modbus RTU协议写线圈
         Args:
@@ -5327,7 +5334,7 @@ class ModbusV4:
         tag = rm_write_modbus_rtu_coils(self.handle, param)
         return tag
 
-    def rm_read_modbus_rtu_input_status(self, param:rm_modbus_rtu_read_params_t) -> tuple[int, list[int]]:
+    def rm_read_modbus_rtu_input_status(self, param: rm_modbus_rtu_read_params_t) -> tuple[int, list[int]]:
         """
         Modbus RTU协议读离散量输入
         Args:
@@ -5347,7 +5354,7 @@ class ModbusV4:
         tag = rm_read_modbus_rtu_input_status(self.handle, param, data)
         return tag, [data[i] for i in range(param.num)]
 
-    def rm_read_modbus_rtu_holding_registers(self, param:rm_modbus_rtu_read_params_t) -> tuple[int, list[int]]:
+    def rm_read_modbus_rtu_holding_registers(self, param: rm_modbus_rtu_read_params_t) -> tuple[int, list[int]]:
         """
         Modbus RTU协议读保持寄存器
         Args:
@@ -5366,8 +5373,8 @@ class ModbusV4:
         data = (c_int * param.num)()
         tag = rm_read_modbus_rtu_holding_registers(self.handle, param, data)
         return tag, [data[i] for i in range(param.num)]
-    
-    def rm_write_modbus_rtu_registers(self, param:rm_modbus_rtu_write_params_t) -> int:
+
+    def rm_write_modbus_rtu_registers(self, param: rm_modbus_rtu_write_params_t) -> int:
         """
         Modbus RTU协议写保持寄存器
         Args:
@@ -5383,8 +5390,8 @@ class ModbusV4:
         """
         tag = rm_write_modbus_rtu_registers(self.handle, param)
         return tag
-    
-    def rm_read_modbus_rtu_input_registers(self, param:rm_modbus_rtu_read_params_t) -> tuple[int, list[int]]:
+
+    def rm_read_modbus_rtu_input_registers(self, param: rm_modbus_rtu_read_params_t) -> tuple[int, list[int]]:
         """
         Modbus RTU协议读输入寄存器
         Args:
@@ -5402,9 +5409,9 @@ class ModbusV4:
         """
         data = (c_int * param.num)()
         tag = rm_read_modbus_rtu_input_registers(self.handle, param, data)
-        return tag, [data[i] for i in range(param.num)] 
-    
-    def rm_read_modbus_tcp_coils(self, param:rm_modbus_tcp_read_params_t) -> tuple[int, list[int]]:
+        return tag, [data[i] for i in range(param.num)]
+
+    def rm_read_modbus_tcp_coils(self, param: rm_modbus_tcp_read_params_t) -> tuple[int, list[int]]:
         """
         Modbus TCP协议读线圈
         Args:
@@ -5424,7 +5431,7 @@ class ModbusV4:
         tag = rm_read_modbus_tcp_coils(self.handle, param, data)
         return tag, [data[i] for i in range(param.num)]
 
-    def rm_write_modbus_tcp_coils(self, param:rm_modbus_tcp_write_params_t) -> int:
+    def rm_write_modbus_tcp_coils(self, param: rm_modbus_tcp_write_params_t) -> int:
         """
         Modbus TCP协议写线圈
         Args:
@@ -5440,8 +5447,8 @@ class ModbusV4:
         """
         tag = rm_write_modbus_tcp_coils(self.handle, param)
         return tag
-    
-    def rm_read_modbus_tcp_input_status(self, param:rm_modbus_tcp_read_params_t) -> tuple[int, list[int]]:
+
+    def rm_read_modbus_tcp_input_status(self, param: rm_modbus_tcp_read_params_t) -> tuple[int, list[int]]:
         """
         Modbus TCP协议读离散量输入
         Args:
@@ -5458,10 +5465,10 @@ class ModbusV4:
                 -list[int] 返回读离散量输入数据，数组大小为param.num
         """
         data = (c_int * param.num)()
-        tag = rm_read_modbus_tcp_input_status(self.handle, param, data) 
+        tag = rm_read_modbus_tcp_input_status(self.handle, param, data)
         return tag, [data[i] for i in range(param.num)]
-    
-    def rm_read_modbus_tcp_holding_registers(self, param:rm_modbus_tcp_read_params_t) -> tuple[int, list[int]]:
+
+    def rm_read_modbus_tcp_holding_registers(self, param: rm_modbus_tcp_read_params_t) -> tuple[int, list[int]]:
         """
         Modbus TCP协议读保持寄存器
         Args:
@@ -5481,7 +5488,7 @@ class ModbusV4:
         tag = rm_read_modbus_tcp_holding_registers(self.handle, param, data)
         return tag, [data[i] for i in range(param.num)]
 
-    def rm_write_modbus_tcp_registers(self, param:rm_modbus_tcp_write_params_t) -> int:
+    def rm_write_modbus_tcp_registers(self, param: rm_modbus_tcp_write_params_t) -> int:
         """
         Modbus TCP协议写保持寄存器
         Args:
@@ -5498,7 +5505,7 @@ class ModbusV4:
         tag = rm_write_modbus_tcp_registers(self.handle, param)
         return tag
 
-    def rm_read_modbus_tcp_input_registers(self, param:rm_modbus_tcp_read_params_t) -> tuple[int, list[int]]:
+    def rm_read_modbus_tcp_input_registers(self, param: rm_modbus_tcp_read_params_t) -> tuple[int, list[int]]:
         """
         Modbus TCP协议读输入寄存器
         Args:
@@ -5517,16 +5524,21 @@ class ModbusV4:
         data = (c_int * param.num)()
         tag = rm_read_modbus_tcp_input_registers(self.handle, param, data)
         return tag, [data[i] for i in range(param.num)]
-    
 
-   
+
 class Algo:
     """
     算法接口
     @details 针对睿尔曼机械臂，提供正逆解、各种位姿参数转换等工具接口。既可通过RoboticArm类连接机械臂使用该类中的成员函数，也可单独使用该类
     """
 
-    def __init__(self, arm_model: rm_robot_arm_model_e, force_type: rm_force_type_e, arm_dof: int = -1, dh: rm_dh_t = None):
+    def __init__(
+        self,
+        arm_model: rm_robot_arm_model_e,
+        force_type: rm_force_type_e,
+        arm_dof: int = -1,
+        dh: Optional[rm_dh_t] = None,
+    ):
         """初始化算法依赖
 
         Args:
@@ -5536,7 +5548,7 @@ class Algo:
             dh (rm_dh_t, optional): 根据给定的DH参数判断机械臂类型，设置为None时根据arm_model判断机械臂类型. Defaults to None.
         """
         self.handle = rm_robot_handle()
-        if(dh is not None):
+        if dh is not None:
             arm_model = rm_robot_arm_model_e.RM_MODEL_UNIVERSAL_E
             rm_algo_init_sys_data_by_dh(force_type, dh, arm_dof)
         else:
@@ -5561,8 +5573,12 @@ class Algo:
         else:
             self.arm_dof = 6
 
-        if(arm_model == rm_robot_arm_model_e.RM_MODEL_ZM7L_E or arm_model == rm_robot_arm_model_e.RM_MODEL_ZM7R_E or 
-           arm_model == rm_robot_arm_model_e.RM_MODEL_RXL75_E or arm_model == rm_robot_arm_model_e.RM_MODEL_RXR75_E):
+        if (
+            arm_model == rm_robot_arm_model_e.RM_MODEL_ZM7L_E
+            or arm_model == rm_robot_arm_model_e.RM_MODEL_ZM7R_E
+            or arm_model == rm_robot_arm_model_e.RM_MODEL_RXL75_E
+            or arm_model == rm_robot_arm_model_e.RM_MODEL_RXR75_E
+        ):
             self.dh_dof = 8
         else:
             self.dh_dof = self.arm_dof
@@ -5603,7 +5619,7 @@ class Algo:
         设置逆解求解模式
 
         Args:
-            mode (bool): 
+            mode (bool):
                 - true：遍历模式，冗余参数遍历的求解策略。适于当前位姿跟要求解的位姿差别特别大的应用场景，如MOVJ_P、位姿编辑等，耗时较长
                 - false：单步模式，自动调整冗余参数的求解策略。适于当前位姿跟要求解的位姿差别特别小、连续周期控制的场景，如笛卡尔空间规划的位姿求解等，耗时短
 
@@ -5779,9 +5795,11 @@ class Algo:
 
         ret = rm_algo_inverse_kinematics(self.handle, params, q_out)
         out = list(q_out)
-        return ret, out[:self.arm_dof]
+        return ret, out[: self.arm_dof]
 
-    def rm_algo_inverse_kinematics_all(self, params:rm_inverse_kinematics_params_t) -> rm_inverse_kinematics_all_solve_t:
+    def rm_algo_inverse_kinematics_all(
+        self, params: rm_inverse_kinematics_params_t
+    ) -> rm_inverse_kinematics_all_solve_t:
         """
         计算逆运动学全解(当前仅支持六自由度机器人)
         Args:
@@ -5793,8 +5811,7 @@ class Algo:
         ret = rm_algo_inverse_kinematics_all(self.handle, params)
         return ret
 
-
-    def rm_algo_ikine_select_ik_solve(self, weight:list[float], params:rm_inverse_kinematics_all_solve_t) -> int:
+    def rm_algo_ikine_select_ik_solve(self, weight: list[float], params: rm_inverse_kinematics_all_solve_t) -> int:
         """
         从多解中选取最优解(当前仅支持六自由度机器人)
         Args:
@@ -5807,8 +5824,7 @@ class Algo:
         ret = rm_algo_ikine_select_ik_solve(weight_c, params)
         return ret
 
-
-    def rm_algo_ikine_check_joint_position_limit(self, q_solve_i:list[float]) -> int:
+    def rm_algo_ikine_check_joint_position_limit(self, q_solve_i: list[float]) -> int:
         """
         检查逆解结果是否超出关节限位(当前仅支持六自由度机器人)
         Args:
@@ -5819,8 +5835,7 @@ class Algo:
         ret = rm_algo_ikine_check_joint_position_limit(q_solve_i)
         return ret
 
-
-    def rm_algo_ikine_check_joint_velocity_limit(self, dt:float, q_ref:list[float], q_solve_i:list[float]) -> int:
+    def rm_algo_ikine_check_joint_velocity_limit(self, dt: float, q_ref: list[float], q_solve_i: list[float]) -> int:
         """
         检查逆解结果是否超出速度限位(当前仅支持六自由度机器人)
         Args:
@@ -5832,11 +5847,11 @@ class Algo:
         """
         q_ref_c = (c_float * 8)(*q_ref)
         q_solve_c = (c_float * 8)(*q_solve_i)
-        
+
         ret = rm_algo_ikine_check_joint_velocity_limit(dt, q_ref_c, q_solve_c)
         return ret
-    
-    def rm_algo_calculate_arm_angle_from_config_rm75(self,q_ref:list[float]) -> tuple[int, float]:
+
+    def rm_algo_calculate_arm_angle_from_config_rm75(self, q_ref: list[float]) -> tuple[int, float]:
         """
         根据参考位形计算臂角大小（仅支持RM75）
         Args:
@@ -5848,9 +5863,11 @@ class Algo:
         q_ref_c = (c_float * ARM_DOF)(*q_ref)
         arm_angle = c_float()
         ret = rm_algo_calculate_arm_angle_from_config_rm75(q_ref_c, byref(arm_angle))
-        return ret,arm_angle.value
+        return ret, arm_angle.value
 
-    def rm_algo_inverse_kinematics_rm75_for_arm_angle(self,params:rm_inverse_kinematics_params_t,arm_angle:float) -> tuple[int,list[float]]:
+    def rm_algo_inverse_kinematics_rm75_for_arm_angle(
+        self, params: rm_inverse_kinematics_params_t, arm_angle: float
+    ) -> tuple[int, list[float]]:
         """
         臂角法求解RM75逆运动学
         Args:
@@ -5864,10 +5881,9 @@ class Algo:
             list[float]: q_solve，求解结果,单位:°
         """
         q_solve = (c_float * ARM_DOF)()
-        ret = rm_algo_inverse_kinematics_rm75_for_arm_angle(params,arm_angle,q_solve)
+        ret = rm_algo_inverse_kinematics_rm75_for_arm_angle(params, arm_angle, q_solve)
         out = list(q_solve)
-        return ret, out[:self.arm_dof]
-
+        return ret, out[: self.arm_dof]
 
     def rm_algo_forward_kinematics(self, joint: list[float], flag: int = 1) -> list[float]:
         """
@@ -5890,10 +5906,8 @@ class Algo:
         position = pose.position
         euler = pose.euler
         qua = pose.quaternion
-        pose_eul = [position.x, position.y,
-                    position.z, euler.rx, euler.ry, euler.rz]
-        pose_qua = [position.x, position.y,
-                    position.z, qua.w, qua.x, qua.y, qua.z]
+        pose_eul = [position.x, position.y, position.z, euler.rx, euler.ry, euler.rz]
+        pose_qua = [position.x, position.y, position.z, qua.w, qua.x, qua.y, qua.z]
         return pose_eul if flag else pose_qua
         # 保留三位小数
         # return [round(value, 3) for value in pose_eul] if flag else [round(value, 3) for value in pose_qua]
@@ -5973,10 +5987,8 @@ class Algo:
         position = pose.position
         euler = pose.euler
         qua = pose.quaternion
-        pose_eul = [position.x, position.y,
-                    position.z, euler.rx, euler.ry, euler.rz]
-        pose_qua = [position.x, position.y,
-                    position.z, qua.w, qua.x, qua.y, qua.z]
+        pose_eul = [position.x, position.y, position.z, euler.rx, euler.ry, euler.rz]
+        pose_qua = [position.x, position.y, position.z, qua.w, qua.x, qua.y, qua.z]
         return pose_eul if flag else pose_qua
         # return pose.to_dict()
 
@@ -5998,10 +6010,8 @@ class Algo:
         position = pose_in_work.position
         euler = pose_in_work.euler
         qua = pose_in_work.quaternion
-        pose_eul = [position.x, position.y,
-                    position.z, euler.rx, euler.ry, euler.rz]
-        pose_qua = [position.x, position.y,
-                    position.z, qua.w, qua.x, qua.y, qua.z]
+        pose_eul = [position.x, position.y, position.z, euler.rx, euler.ry, euler.rz]
+        pose_qua = [position.x, position.y, position.z, qua.w, qua.x, qua.y, qua.z]
         return pose_eul if flag else pose_qua
         # return pose_in_work.to_dict()
 
@@ -6023,10 +6033,8 @@ class Algo:
         position = pose_in_base.position
         euler = pose_in_base.euler
         qua = pose_in_base.quaternion
-        pose_eul = [position.x, position.y,
-                    position.z, euler.rx, euler.ry, euler.rz]
-        pose_qua = [position.x, position.y,
-                    position.z, qua.w, qua.x, qua.y, qua.z]
+        pose_eul = [position.x, position.y, position.z, euler.rx, euler.ry, euler.rz]
+        pose_qua = [position.x, position.y, position.z, qua.w, qua.x, qua.y, qua.z]
         return pose_eul if flag else pose_qua
         # return pose_in_base.to_dict()
 
@@ -6047,10 +6055,8 @@ class Algo:
         position = end_pose.position
         euler = end_pose.euler
         qua = end_pose.quaternion
-        pose_eul = [position.x, position.y,
-                    position.z, euler.rx, euler.ry, euler.rz]
-        pose_qua = [position.x, position.y,
-                    position.z, qua.w, qua.x, qua.y, qua.z]
+        pose_eul = [position.x, position.y, position.z, euler.rx, euler.ry, euler.rz]
+        pose_qua = [position.x, position.y, position.z, qua.w, qua.x, qua.y, qua.z]
         return pose_eul if flag else pose_qua
         # return end_pose.to_dict()
 
@@ -6071,14 +6077,14 @@ class Algo:
         position = end_pose.position
         euler = end_pose.euler
         qua = end_pose.quaternion
-        pose_eul = [position.x, position.y,
-                    position.z, euler.rx, euler.ry, euler.rz]
-        pose_qua = [position.x, position.y,
-                    position.z, qua.w, qua.x, qua.y, qua.z]
+        pose_eul = [position.x, position.y, position.z, euler.rx, euler.ry, euler.rz]
+        pose_qua = [position.x, position.y, position.z, qua.w, qua.x, qua.y, qua.z]
         return pose_eul if flag else pose_qua
         # return end_pose.to_dict()
 
-    def rm_algo_rotate_move(self, curr_joint: list[float], rotate_axis: int, rotate_angle: float, choose_axis: rm_pose_t, flag: int = 1) -> list[float]:
+    def rm_algo_rotate_move(
+        self, curr_joint: list[float], rotate_axis: int, rotate_angle: float, choose_axis: rm_pose_t, flag: int = 1
+    ) -> list[float]:
         """
         计算环绕运动位姿
 
@@ -6098,19 +6104,18 @@ class Algo:
             curr_joint = (c_float * self.arm_dof)(*curr_joint)
         else:
             curr_joint = (c_float * ARM_DOF)(*curr_joint)
-        pose = rm_algo_rotate_move(
-            self.handle, curr_joint, rotate_axis, rotate_angle, choose_axis)
+        pose = rm_algo_rotate_move(self.handle, curr_joint, rotate_axis, rotate_angle, choose_axis)
         position = pose.position
         euler = pose.euler
         qua = pose.quaternion
-        pose_eul = [position.x, position.y,
-                    position.z, euler.rx, euler.ry, euler.rz]
-        pose_qua = [position.x, position.y,
-                    position.z, qua.w, qua.x, qua.y, qua.z]
+        pose_eul = [position.x, position.y, position.z, euler.rx, euler.ry, euler.rz]
+        pose_qua = [position.x, position.y, position.z, qua.w, qua.x, qua.y, qua.z]
         return pose_eul if flag else pose_qua
         # return pose.to_dict()
 
-    def rm_algo_cartesian_tool(self, curr_joint: list[float], move_lengthx: float, move_lengthy: float, move_lengthz: float, flag: int = 1) -> list[float]:
+    def rm_algo_cartesian_tool(
+        self, curr_joint: list[float], move_lengthx: float, move_lengthy: float, move_lengthz: float, flag: int = 1
+    ) -> list[float]:
         """
         计算沿工具坐标系运动位姿
 
@@ -6130,15 +6135,12 @@ class Algo:
             curr_joint = (c_float * self.arm_dof)(*curr_joint)
         else:
             curr_joint = (c_float * ARM_DOF)(*curr_joint)
-        pose = rm_algo_cartesian_tool(
-            self.handle, curr_joint, move_lengthx, move_lengthy, move_lengthz)
+        pose = rm_algo_cartesian_tool(self.handle, curr_joint, move_lengthx, move_lengthy, move_lengthz)
         position = pose.position
         euler = pose.euler
         qua = pose.quaternion
-        pose_eul = [position.x, position.y,
-                    position.z, euler.rx, euler.ry, euler.rz]
-        pose_qua = [position.x, position.y,
-                    position.z, qua.w, qua.x, qua.y, qua.z]
+        pose_eul = [position.x, position.y, position.z, euler.rx, euler.ry, euler.rz]
+        pose_qua = [position.x, position.y, position.z, qua.w, qua.x, qua.y, qua.z]
         return pose_eul if flag else pose_qua
         # return pose.to_dict()
 
@@ -6160,13 +6162,11 @@ class Algo:
 
         deltaPosAndRot = (c_float * 6)(*deltaPosAndRot)
 
-        pose = rm_algo_pose_move(
-            self.handle, po1, deltaPosAndRot, frameMode)
-        
+        pose = rm_algo_pose_move(self.handle, po1, deltaPosAndRot, frameMode)
+
         position = pose.position
         euler = pose.euler
-        pose_eul = [position.x, position.y,
-                    position.z, euler.rx, euler.ry, euler.rz]
+        pose_eul = [position.x, position.y, position.z, euler.rx, euler.ry, euler.rz]
         return pose_eul
 
     def rm_algo_set_dh(self, dh: rm_dh_t) -> None:
@@ -6186,14 +6186,14 @@ class Algo:
         dh = rm_algo_get_dh()
         return dh.to_dict(self.dh_dof)
 
-    def rm_algo_universal_singularity_analyse(self, q:list[float], singluar_value_limit:float) -> int:
+    def rm_algo_universal_singularity_analyse(self, q: list[float], singluar_value_limit: float) -> int:
         """
         通过分析雅可比矩阵最小奇异值, 判断机器人是否处于奇异状态
         Args:
             -q 要判断的关节角度（机械零位描述），单位：°
             -singluar_value_limit 最小奇异值阈值，若传NULL，则使用内部默认值，默认值为0.01（该值在0-1之间）
         Returns:
-            int 
+            int
              0:在当前阈值条件下正常
              -1:表示在当前阈值条件下判断为奇异区
              -2:表示计算失败
@@ -6203,13 +6203,13 @@ class Algo:
         ret = rm_algo_universal_singularity_analyse(q_c, singluar_value_limit)
         return ret
 
-    def rm_algo_kin_singularity_thresholds_init(self)-> None:
+    def rm_algo_kin_singularity_thresholds_init(self) -> None:
         """
-        恢复初始阈值(仅适用于解析法分析机器人奇异状态),阈值初始化为：limit_qe=10deg,limit_qw=10deg,limit_d = 0.05m 
+        恢复初始阈值(仅适用于解析法分析机器人奇异状态),阈值初始化为：limit_qe=10deg,limit_qw=10deg,limit_d = 0.05m
         """
-        rm_algo_kin_singularity_thresholds_init()        
+        rm_algo_kin_singularity_thresholds_init()
 
-    def rm_algo_kin_set_singularity_thresholds(self,limit_qe:float,limit_qw:float, limit_d:float)-> None:
+    def rm_algo_kin_set_singularity_thresholds(self, limit_qe: float, limit_qw: float, limit_d: float) -> None:
         """
         设置自定义阈值(仅适用于解析法分析机器人奇异状态)
         Args:
@@ -6219,11 +6219,9 @@ class Algo:
         Returns:
             None
         """
-        rm_algo_kin_set_singularity_thresholds(limit_qe,limit_qw,limit_d)
+        rm_algo_kin_set_singularity_thresholds(limit_qe, limit_qw, limit_d)
 
-
-
-    def rm_algo_kin_get_singularity_thresholds(self)-> tuple[float,float,float]:
+    def rm_algo_kin_get_singularity_thresholds(self) -> tuple[float, float, float]:
         """
         获取自定义阈值(仅适用于解析法分析机器人奇异状态)
         Args:
@@ -6236,12 +6234,10 @@ class Algo:
         limit_qe = c_float()
         limit_qw = c_float()
         limit_d = c_float()
-        rm_algo_kin_get_singularity_thresholds(byref(limit_qe),byref(limit_qw),byref(limit_d))
-        return limit_qe.value,limit_qw.value,limit_d.value
+        rm_algo_kin_get_singularity_thresholds(byref(limit_qe), byref(limit_qw), byref(limit_d))
+        return limit_qe.value, limit_qw.value, limit_d.value
 
-
-
-    def rm_algo_kin_robot_singularity_analyse(self,q:list[float]) -> tuple[int,float]:
+    def rm_algo_kin_robot_singularity_analyse(self, q: list[float]) -> tuple[int, float]:
         """
         解析法判断机器人是否处于奇异位形（仅支持六自由度）
         Args:
@@ -6250,14 +6246,13 @@ class Algo:
             tuple[int,float]: 包含两个元素的元组。
             - int: 0:正常 -1:肩部奇异 -2:肘部奇异 -3:腕部奇异
             - float: 返回腕部中心点到肩部奇异平面的距离，该值越接近0说明越接近肩部奇异,单位m
-        """      
+        """
         q_c = (c_float * 6)(*q)
         distance_c = c_float()
         ret = rm_algo_kin_robot_singularity_analyse(q_c, byref(distance_c))
         return ret, distance_c.value
 
-  
-    def rm_algo_set_tool_envelope(self, toolSphere_i:int, data:rm_tool_sphere_t) -> None:
+    def rm_algo_set_tool_envelope(self, toolSphere_i: int, data: rm_tool_sphere_t) -> None:
         """
         设置工具包络球参数
         Args:
@@ -6266,8 +6261,7 @@ class Algo:
         """
         rm_algo_set_tool_envelope(toolSphere_i, data)
 
-
-    def rm_algo_get_tool_envelope(self, toolSphere_i:int) -> rm_tool_sphere_t:
+    def rm_algo_get_tool_envelope(self, toolSphere_i: int) -> rm_tool_sphere_t:
         """
         获取工具包络球参数
         Args:
@@ -6278,15 +6272,14 @@ class Algo:
         tool_sphere_type = rm_tool_sphere_t()
         rm_algo_get_tool_envelope(toolSphere_i, byref(tool_sphere_type))
         return tool_sphere_type
-        
 
-    def rm_algo_safety_robot_self_collision_detection(self,joint_deg:list[float]) -> int:
+    def rm_algo_safety_robot_self_collision_detection(self, joint_deg: list[float]) -> int:
         """
         自碰撞检测
         Args:
             joint_deg(list[float]) 要判断的关节角度，单位°
         Returns:
-            int 
+            int
              -0: 无碰撞
              1: 发生碰撞,超出关节限位将被认为发生碰撞
         """
@@ -6294,23 +6287,48 @@ class Algo:
         ret = rm_algo_safety_robot_self_collision_detection(joint_deg_c)
         return ret
 
- 
 
-class RoboticArm(ArmState, MovePlan, JointConfigSettings, JointConfigReader, ArmTipVelocityParameters,
-                 ToolCoordinateConfig, WorkCoordinateConfig, ArmTeachMove, ArmMotionControl, ControllerConfig,
-                 CommunicationConfig, ControllerIOConfig, EffectorIOConfig, GripperControl, Force, DragTeach, HandControl, ModbusConfig, InstallPos,
-                 ForcePositionControl, ProjectManagement, GlobalWaypointManage, ElectronicFenceConfig, SelfCollision,
-                 UdpConfig, Algo, LiftControl, ExpandControl, TrajectoryManage, ModbusV4):
-    """机械臂连接、断开、日志设置等操作
-    """
+class RoboticArm(
+    ArmState,
+    MovePlan,
+    JointConfigSettings,
+    JointConfigReader,
+    ArmTipVelocityParameters,
+    ToolCoordinateConfig,
+    WorkCoordinateConfig,
+    ArmTeachMove,
+    ArmMotionControl,
+    ControllerConfig,
+    CommunicationConfig,
+    ControllerIOConfig,
+    EffectorIOConfig,
+    GripperControl,
+    Force,
+    DragTeach,
+    HandControl,
+    ModbusConfig,
+    InstallPos,
+    ForcePositionControl,
+    ProjectManagement,
+    GlobalWaypointManage,
+    ElectronicFenceConfig,
+    SelfCollision,
+    UdpConfig,
+    Algo,
+    LiftControl,
+    ExpandControl,
+    TrajectoryManage,
+    ModbusV4,
+):
+    """机械臂连接、断开、日志设置等操作"""
 
-    def __init__(self, mode: rm_thread_mode_e = None):
+    def __init__(self, mode: Optional[rm_thread_mode_e] = None):
         """初始化线程模式
 
         Args:
-            mode (rm_thread_mode_e): 
-                    RM_SINGLE_MODE_E：单线程模式，单线程非阻塞等待数据返回；  
-                    RM_DUAL_MODE_E：双线程模式，增加接收线程监测队列中的数据；  
+            mode (rm_thread_mode_e):
+                    RM_SINGLE_MODE_E：单线程模式，单线程非阻塞等待数据返回；
+                    RM_DUAL_MODE_E：双线程模式，增加接收线程监测队列中的数据；
                     RM_TRIPLE_MODE_E：三线程模式，在双线程模式基础上增加线程监测UDP接口数据；
         """
         if mode == None:
@@ -6318,7 +6336,9 @@ class RoboticArm(ArmState, MovePlan, JointConfigSettings, JointConfigReader, Arm
         rm_init(mode)
         print("current c api version: ", rm_api_version())
 
-    def rm_create_robot_arm(self, ip: str, port: int, level: int = 3, log_func: CFUNCTYPE = None) -> rm_robot_handle:
+    def rm_create_robot_arm(
+        self, ip: str, port: int, level: int = 3, log_func: Optional[CFUNCTYPE] = None
+    ) -> rm_robot_handle:
         """
         初始化RoboticArm类，创建机械臂连接控制句柄。
 
@@ -6352,8 +6372,12 @@ class RoboticArm(ArmState, MovePlan, JointConfigSettings, JointConfigReader, Arm
             if rm_get_robot_info(self.handle, info) == 0:
                 self.arm_dof = info.arm_dof
                 self.robot_controller_version = info.robot_controller_version
-                if(info.arm_model == rm_robot_arm_model_e.RM_MODEL_ZM7L_E or info.arm_model == rm_robot_arm_model_e.RM_MODEL_ZM7R_E or
-                   info.arm_model == rm_robot_arm_model_e.RM_MODEL_RXL75_E or info.arm_model == rm_robot_arm_model_e.RM_MODEL_RXR75_E):
+                if (
+                    info.arm_model == rm_robot_arm_model_e.RM_MODEL_ZM7L_E
+                    or info.arm_model == rm_robot_arm_model_e.RM_MODEL_ZM7R_E
+                    or info.arm_model == rm_robot_arm_model_e.RM_MODEL_RXL75_E
+                    or info.arm_model == rm_robot_arm_model_e.RM_MODEL_RXR75_E
+                ):
                     self.dh_dof = 8
                 else:
                     self.dh_dof = self.arm_dof
@@ -6368,7 +6392,7 @@ class RoboticArm(ArmState, MovePlan, JointConfigSettings, JointConfigReader, Arm
         """
         return rm_delete_robot_arm(self.handle)
 
-    @classmethod  
+    @classmethod
     def rm_destroy(cls) -> int:
         """关闭所有机械臂连接，销毁所有线程
         Returns:
@@ -6385,7 +6409,7 @@ class RoboticArm(ArmState, MovePlan, JointConfigSettings, JointConfigReader, Arm
         """
         rm_set_log_save(path)
 
-    def rm_set_timeout(self,timeout: int) -> None:
+    def rm_set_timeout(self, timeout: int) -> None:
         """
         设置全局超时时间
         Args:
@@ -6426,7 +6450,7 @@ class RoboticArm(ArmState, MovePlan, JointConfigSettings, JointConfigReader, Arm
         ret = rm_get_arm_run_mode(self.handle, byref(mode))
         return ret, mode.value
 
-    def rm_set_arm_emergency_stop(self, state:bool) -> int:
+    def rm_set_arm_emergency_stop(self, state: bool) -> int:
         """设置机械臂急停状态
         Args:
             state (bool): 急停状态，true：急停，false：恢复
@@ -6454,7 +6478,7 @@ class RoboticArm(ArmState, MovePlan, JointConfigSettings, JointConfigReader, Arm
         """
         info = rm_robot_info_t()
         ret = rm_get_robot_info(self.handle, info)
-        return ret, info.to_dictionary() #返回字典，也可直接返回info
+        return ret, info.to_dictionary()  # 返回字典，也可直接返回info
 
     def rm_get_arm_event_call_back(self, event_callback: rm_event_callback_ptr):
         """注册机械臂事件回调函数
