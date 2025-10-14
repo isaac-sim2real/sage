@@ -32,7 +32,6 @@ SAGE combines:
 - [Usage](#usage)
   - [Simulation Execution](#simulation-execution)
   - [Data Analysis](#data-analysis)
-<<<<<<< HEAD
   - [Real Robot Integration (Coming Soon)](#real-robot-integration-coming-soon)
 - [Data Format](#data-format)
   - [Motion Files](#motion-files)
@@ -42,8 +41,6 @@ SAGE combines:
 - [Adding New Humanoids](#adding-new-humanoids)
   - [Input Preparation](#input-preparation)
   - [Simulation Setup](#simulation-setup)
-=======
->>>>>>> bbc834b (Update three README files.)
   - [Real Robot Integration](#real-robot-integration)
 - [Configuration](#configuration)
   - [Files and Directories](#files-and-directories)
