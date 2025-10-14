@@ -50,6 +50,7 @@ def main():
     import isaaclab.sim.schemas as schemas  # noqa: E402
     from isaacsim.core.api import World  # noqa: E402
     from isaacsim.core.prims import Articulation  # noqa: E402
+    from isaacsim.core.utils.prims import create_prim  # noqa: E402
     from isaacsim.core.utils.stage import add_reference_to_stage, create_new_stage  # noqa: E402
     from omni.kit.viewport.utility import capture_viewport_to_buffer  # noqa: E402
 
@@ -62,6 +63,7 @@ def main():
     sim_module.add_reference_to_stage = add_reference_to_stage
     sim_module.create_new_stage = create_new_stage
     sim_module.capture_viewport_to_buffer = capture_viewport_to_buffer
+    sim_module.create_prim = create_prim
 
     # Get list of motion files to process
     motion_files = get_motion_files(args.motion_files)

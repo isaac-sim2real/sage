@@ -190,11 +190,10 @@ Prepare retargeted motion files for your specific humanoid robot:
 
 ### Simulation Setup
 
-To add simulation support for a new humanoid:
+This section gives a general idea to add simulation support for a new humanoid. For detailed instructions, please refer to the [walkthrough](docs/NEW_ROBOT.md):
 
 **1. Prepare USD Assets**
 - Add your robot's USD file to `assets/` directory
-- Import the robot into `assets/robot_env.usd` scene file
 - Ensure proper joint naming and hierarchy
 
 **2. Update Simulation Code**
