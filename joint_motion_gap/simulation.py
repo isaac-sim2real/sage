@@ -12,6 +12,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+import carb
 import cv2
 import numpy as np
 import omni
@@ -123,8 +124,13 @@ class JointMotionBenchmark:
         if self.robot_name == "h1_2":
             self.robot_usd_path = os.path.join(self.repo_path, "assets/h1_2/h1_2.usd")
             self.robot_offset = [0.0, 0.0, 1.1]
+        elif self.robot_name == "g1":
+            NUCLEUS_ASSET_ROOT_DIR = carb.settings.get_settings().get("/persistent/isaac/asset_root/default")
+            ISAAC_NUCLEUS_DIR = f"{NUCLEUS_ASSET_ROOT_DIR}/Isaac"
+            self.robot_usd_path = f"{ISAAC_NUCLEUS_DIR}/Robots/Unitree/G1/g1.usd"
+            self.robot_offset = [0.0, 0.0, 0.82]
         else:
-            raise ValueError(f"Unsupported robot: {self.robot_name}. Only h1_2 is supported.")
+            raise ValueError(f"Unsupported robot: {self.robot_name}. Supported robots: h1_2, g1")
 
         # Create and configure stage
         create_new_stage()
