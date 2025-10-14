@@ -29,6 +29,8 @@ Throughout this document:
 
 All robot assets are stored under the `<REPO_ROOT>/assets` folder. The robot asset must be in **USD format** for compatibility with Isaac Sim.
 
+> **Tip:** If your robot is available in the [Isaac Sim Robot Assets](https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_robots.html), use it directly with the corresponding placeholder. Otherwise, proceed with the conversion steps below.
+
 ### 1.1 Convert from Existing Model
 
 The robot asset needs to be in **USD format**. Isaac Sim provides various tools to import from different robot representations, including **URDF**, **MJCF**, and direct import from selective CAD platforms. For details, please refer to the [official Isaac Sim documentation](https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/importers_exporters.html).
@@ -111,36 +113,45 @@ _Figure 3: Robot Joint Hierarchy in Stage Panel_
 ![Robot Placement](images/robot_z_offset.png) \
 _Figure 4: Robot Z-Offset Testing_
 
-## Step 2: Configure simulation.py
-
-Add your robot configuration to the `_setup_simulation` method in `<REPO_ROOT>/joint_motion_gap/simulation.py`.
+## Step 2: Register Your Robot
 
 ### 2.1 Add Robot Configuration
 
-Locate the `_setup_simulation` method and add your robot configuration:
+Locate the `ROBOT_CONFIGS` dictionary in `<REPO_ROOT>/joint_motion_gap/assets.py` and add your robot entry:
 
 ```python
-def _setup_simulation(self):
-    """Set up the simulation environment."""
-    # Set up basic robot configuration
-    self.prim_path = "/World/Robot"
-    if self.robot_name == "h1_2":
-        self.robot_usd_path = os.path.join(self.repo_path, "assets/h1_2/h1_2.usd")
-        self.robot_offset = [0.0, 0.0, 1.1]
-    elif self.robot_name == "gr1t2":  # Replace "gr1t2" with your robot name
-        self.robot_usd_path = os.path.join(self.repo_path, "assets/GR1T2_nohand/GR1T2_nohand.usd")
-        self.robot_offset = [0.0, 0.0, 0.96]  # Adjust based on your testing
-    else:
-        raise ValueError(f"Unsupported robot: {self.robot_name}. Supported robots: h1_2, gr1t2")
+ROBOT_CONFIGS = {
+    # ... existing robots ...
+
+    # Add your new robot here:
+    "gr1t2": {
+        "usd_path": "assets/GR1T2_nohand/GR1T2_nohand.usd",
+        "offset": (0.0, 0.0, 0.96),
+        "default_kp": 100.0,
+        "default_kd": 2.0,
+    },
+}
 ```
 
-**Key Configuration Parameters:**
+**Configuration Parameters:**
 
-- **`robot_name`**: Must match the command line argument (use lowercase)
-- **`robot_usd_path`**: Path to your USD asset file
-- **`robot_offset`**: Position offset `[x, y, z]` in meters from Step 1.4
-  - Typically only Z-axis adjustment needed
-- **Error message**: Update to include your new robot name in supported robots list
+| Parameter          | Type                         | Description                                                                           | Example                                  |
+| ------------------ | ---------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **Dictionary Key** | `str`                        | Robot identifier (lowercase, used as the robot name)                                  | `"gr1t2"`                                |
+| **`usd_path`**     | `str`                        | Path to USD file (relative to `<REPO_ROOT>` or use `{ISAAC_NUCLEUS_DIR}` placeholder) | `"assets/GR1T2_nohand/GR1T2_nohand.usd"` |
+| **`offset`**       | `tuple[float, float, float]` | Position offset `(x, y, z)` in meters (from Step 1.4)                                 | `(0.0, 0.0, 0.96)`                       |
+| **`prim_path`**    | `str` (optional)             | USD prim path for the robot                                                           | `"/World/Robot"` (default)               |
+| **`default_kp`**   | `float` (optional)           | Default proportional gain for PD controller                                           | `100.0`                                  |
+| **`default_kd`**   | `float` (optional)           | Default derivative gain for PD controller                                             | `2.0`                                    |
+
+**Important Notes:**
+
+- **Dictionary key**: Use lowercase for consistency (e.g., `"gr1t2"` not `"GR1T2"`). This becomes the robot name
+- **USD Path Options**:
+  - **Relative path**: `"assets/your_robot/robot.usd"` - For local assets in the repository
+  - **Nucleus path with placeholder**: `"{ISAAC_NUCLEUS_DIR}/Robots/Manufacturer/Model/robot.usd"` - For assets on Isaac Sim Nucleus server
+  - The `{ISAAC_NUCLEUS_DIR}` placeholder is automatically resolved at runtime
+- **Offset values**: Use the Z-offset value you determined in Step 1.4
 
 ## Step 3: Create Robot Configuration File
 
