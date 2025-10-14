@@ -186,14 +186,15 @@ Create the following directory structure:
 └── motion_files/
     └── gr1t2/                    # Robot name folder (replace "gr1t2" with your robot name)
         ├── custom/               # Custom motion category
-        │   ├── wave_motion.txt
-        │   └── dance_sequence.txt
+        │   └── custom_motion.txt
         └── amass/               # AMASS-derived motions
             ├── punch_left01_poses_action_sequence.txt
             └── walk_sequence_poses_action_sequence.txt
 ```
 
 ### 4.2 Motion File Format
+
+To perform a quick test, follow the process below to create your custom motion file at `<REPO_ROOT>/motion_files/gr1t2/custom/custom_motion.txt`.
 
 **Header Line:** Comma-separated joint names (must match your USD joint names)
 
@@ -216,8 +217,6 @@ left_shoulder_pitch_joint, left_shoulder_roll_joint, left_shoulder_yaw_joint, ..
 - Values must be in radians (not degrees)
 - Number of values per line must match the number of joints in header
 
-**Example motion file:** `<REPO_ROOT>/motion_files/gr1t2/sample/simple_wave.txt`
-
 ### 4.3 Add Custom Motion Source
 
 If you're adding a new motion source category, update the argument parser in `<REPO_ROOT>/scripts/run_simulation.py`:
@@ -229,7 +228,7 @@ If you're adding a new motion source category, update the argument parser in `<R
 parser.add_argument(
     "--motion-source",
     type=str,
-    choices=["amass", "sample", "your_new_source"],  # Add your source here
+    choices=["amass", "custom", "your_new_source"],  # Add your source here
     required=True,
     help="Source of the motion",
 )
@@ -245,8 +244,8 @@ After completing all steps, test your robot integration:
 cd <REPO_ROOT>
 ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --robot-name gr1t2 \
-    --motion-source sample \
-    --motion-files motion_files/gr1t2/sample/simple_wave.txt \
+    --motion-source custom \
+    --motion-files motion_files/gr1t2/custom/custom_motion.txt \
     --valid-joints-file configs/gr1t2_valid_joints.txt \
     --output-folder results \
     --control-freq 10 \
@@ -262,7 +261,7 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
 - Robot spawns correctly above the ground
 - All specified joints move according to the motion file
 - No error messages about missing joints
-- Output files are generated in `<REPO_ROOT>/results/sim/gr1t2/sample/simple_wave/` (path will use your robot name)
+- Output files are generated in `<REPO_ROOT>/results/sim/gr1t2/custom/custom_motion/` (path will use your robot name)
   - `joint_list.txt`: Lists controlled joints
   - `control.csv`: Command positions over time
   - `state_motor.csv`: Actual joint states over time
