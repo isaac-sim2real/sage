@@ -12,10 +12,11 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-import carb
 import cv2
 import numpy as np
 import omni
+
+from .assets import get_robot_config
 
 # Isaac Sim modules - will be imported after SimulationApp initialization
 # These will be set as module-level variables by the calling script
@@ -119,18 +120,11 @@ class JointMotionBenchmark:
 
     def _setup_simulation(self):
         """Set up the simulation environment."""
-        # Set up basic robot configuration
-        self.prim_path = "/World/Robot"
-        if self.robot_name == "h1_2":
-            self.robot_usd_path = os.path.join(self.repo_path, "assets/h1_2/h1_2.usd")
-            self.robot_offset = [0.0, 0.0, 1.1]
-        elif self.robot_name == "g1":
-            NUCLEUS_ASSET_ROOT_DIR = carb.settings.get_settings().get("/persistent/isaac/asset_root/default")
-            ISAAC_NUCLEUS_DIR = f"{NUCLEUS_ASSET_ROOT_DIR}/Isaac"
-            self.robot_usd_path = f"{ISAAC_NUCLEUS_DIR}/Robots/Unitree/G1/g1.usd"
-            self.robot_offset = [0.0, 0.0, 0.82]
-        else:
-            raise ValueError(f"Unsupported robot: {self.robot_name}. Supported robots: h1_2, g1")
+        # Get robot configuration from assets
+        self.robot_config = get_robot_config(self.robot_name)
+        self.prim_path = self.robot_config.prim_path
+        self.robot_usd_path = self.robot_config.usd_path
+        self.robot_offset = self.robot_config.offset
 
         # Create and configure stage
         create_new_stage()
@@ -160,12 +154,11 @@ class JointMotionBenchmark:
         self.robot = Articulation(prim_paths_expr=self.prim_path, name=self.robot_name)
         self.world.scene.add(self.robot)
 
-        # Configure articulation properties
-        # TODO: configurable with config file or argument
+        # Configure articulation properties using robot-specific values
         articulation_props = schemas.ArticulationRootPropertiesCfg(
-            enabled_self_collisions=False,
-            solver_position_iteration_count=4,
-            solver_velocity_iteration_count=4,
+            enabled_self_collisions=self.robot_config.get_config_value("enabled_self_collisions", False),
+            solver_position_iteration_count=self.robot_config.get_config_value("solver_position_iterations", 4),
+            solver_velocity_iteration_count=self.robot_config.get_config_value("solver_velocity_iterations", 4),
             fix_root_link=self.fix_root,
         )
         schemas.modify_articulation_root_properties(self.prim_path, articulation_props, stage)
@@ -222,8 +215,10 @@ class JointMotionBenchmark:
             f" Kd={dampings[0][0]}"
         )
 
-        # Note: Currently just directly set to 50, 1 to follow upper body control in real world
-        self.robot.set_gains(kps=50.0, kds=1.0, joint_indices=self.joint_indices)
+        # Use robot-specific PD values if available, otherwise use defaults
+        default_kp = self.robot_config.get_config_value("default_kp", 50.0)
+        default_kd = self.robot_config.get_config_value("default_kd", 1.0)
+        self.robot.set_gains(kps=default_kp, kds=default_kd, joint_indices=self.joint_indices)
 
         stiffnesses, dampings = self.robot.get_gains(joint_indices=self.joint_indices)
         log_message(
