@@ -6,7 +6,7 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 # Isaac Sim modules - will be imported after SimulationApp initialization
 # This will be set as a module-level variable by the calling script
@@ -19,25 +19,24 @@ carb = None
 # To add a new robot, simply add an entry to this dictionary.
 #
 # Fields:
-#   - name: Robot identifier (should match the key)
-#   - usd_path: Path to USD file (use {ISAAC_NUCLEUS_DIR} for nucleus paths)
-#   - offset: [x, y, z] translation offset for robot placement
+#   - usd_path: Path to USD file (local or NVIDIA Nucleus with placeholders)
+#       Placeholders: {NUCLEUS_ASSET_ROOT_DIR}, {NVIDIA_NUCLEUS_DIR},
+#                     {ISAAC_NUCLEUS_DIR}, {ISAACLAB_NUCLEUS_DIR}
+#   - offset: (x, y, z) translation offset for robot placement
 #   - prim_path: (optional) USD prim path, defaults to "/World/Robot"
 #   - Additional fields like default_kp, default_kd are passed as kwargs
 # ============================================================================
 
 ROBOT_CONFIGS = {
     "h1_2": {
-        "name": "h1_2",
         "usd_path": "assets/h1_2/h1_2.usd",
-        "offset": [0.0, 0.0, 1.1],
+        "offset": (0.0, 0.0, 1.1),
         "default_kp": 50.0,
         "default_kd": 1.0,
     },
     "g1": {
-        "name": "g1",
         "usd_path": "{ISAAC_NUCLEUS_DIR}/Robots/Unitree/G1/g1.usd",
-        "offset": [0.0, 0.0, 0.82],
+        "offset": (0.0, 0.0, 0.82),
         "default_kp": 50.0,
         "default_kd": 1.0,
     },
@@ -47,28 +46,49 @@ ROBOT_CONFIGS = {
 class RobotAssetConfig:
     """Configuration class for robot assets."""
 
-    def __init__(self, name: str, usd_path: str, offset: List[float], prim_path: str = "/World/Robot", **kwargs):
-        """
-        Initialize robot asset configuration.
+    def __init__(
+        self,
+        name: str,
+        usd_path: str,
+        offset: Tuple[float, float, float],
+        prim_path: str = "/World/Robot",
+        **kwargs,
+    ):
+        """Initialize robot asset configuration."""
+        self._name = name
+        self._usd_path = usd_path
+        self._offset = offset
+        self._prim_path = prim_path
+        self._config = kwargs
 
-        Args:
-            name: Robot name identifier
-            usd_path: Path to the robot USD file (can be relative to repo root)
-            offset: Translation offset [x, y, z] for robot placement
-            prim_path: USD prim path for the robot (default: "/World/Robot")
-            **kwargs: Additional configuration parameters
-        """
-        self.name = name
-        self.usd_path = usd_path
-        self.offset = offset
-        self.prim_path = prim_path
+    @property
+    def name(self) -> str:
+        """Robot name identifier."""
+        return self._name
 
-        # Store additional configuration parameters
-        self.config = kwargs
+    @property
+    def usd_path(self) -> str:
+        """Path to the robot USD file."""
+        return self._usd_path
+
+    @property
+    def offset(self) -> Tuple[float, float, float]:
+        """Translation offset (x, y, z) for robot placement."""
+        return self._offset
+
+    @property
+    def prim_path(self) -> str:
+        """USD prim path for the robot."""
+        return self._prim_path
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        """Additional configuration parameters."""
+        return self._config
 
     def get_config_value(self, key: str, default=None):
         """Get additional configuration value by key."""
-        return self.config.get(key, default)
+        return self._config.get(key, default)
 
 
 class RobotAssetRegistry:
@@ -87,24 +107,32 @@ class RobotAssetRegistry:
 
     def _resolve_path_placeholders(self, path: str) -> str:
         """Resolve placeholders in USD paths."""
-        if "{ISAAC_NUCLEUS_DIR}" in path:
+        if "{NUCLEUS_ASSET_ROOT_DIR}" in path:
+            nucleus_asset_root_dir = f"{self._get_nucleus_asset_root_dir()}"
+            path = path.replace("{NUCLEUS_ASSET_ROOT_DIR}", nucleus_asset_root_dir)
+        elif "{NVIDIA_NUCLEUS_DIR}" in path:
+            nvidia_nucleus_dir = f"{self._get_nucleus_asset_root_dir()}/NVIDIA"
+            path = path.replace("{NVIDIA_NUCLEUS_DIR}", nvidia_nucleus_dir)
+        elif "{ISAAC_NUCLEUS_DIR}" in path:
             isaac_nucleus_dir = f"{self._get_nucleus_asset_root_dir()}/Isaac"
             path = path.replace("{ISAAC_NUCLEUS_DIR}", isaac_nucleus_dir)
+        elif "{ISAACLAB_NUCLEUS_DIR}" in path:
+            isaaclab_nucleus_dir = f"{self._get_nucleus_asset_root_dir()}/IsaacLab"
+            path = path.replace("{ISAACLAB_NUCLEUS_DIR}", isaaclab_nucleus_dir)
         return path
 
-    def _create_robot_config(self, config_data: Dict[str, Any]) -> RobotAssetConfig:
+    def _create_robot_config(self, robot_name: str, config_data: Dict[str, Any]) -> RobotAssetConfig:
         """Create a RobotAssetConfig from dictionary data."""
         # Extract required fields
-        name = config_data["name"]
         usd_path = self._resolve_path_placeholders(config_data["usd_path"])
         offset = config_data["offset"]
         prim_path = config_data.get("prim_path", "/World/Robot")
 
-        # Get additional kwargs
-        kwargs = {k: v for k, v in config_data.items() if k not in ["name", "usd_path", "offset", "prim_path"]}
+        # Get additional kwargs (everything except the known fields)
+        kwargs = {k: v for k, v in config_data.items() if k not in ["usd_path", "offset", "prim_path"]}
 
         return RobotAssetConfig(
-            name=name,
+            name=robot_name,
             usd_path=usd_path,
             offset=offset,
             prim_path=prim_path,
@@ -114,8 +142,8 @@ class RobotAssetRegistry:
     def _initialize_assets(self) -> Dict[str, RobotAssetConfig]:
         """Initialize and return the robot assets dictionary."""
         assets = {}
-        for robot_key, config_data in self._config_dict.items():
-            assets[robot_key] = self._create_robot_config(config_data)
+        for robot_name, config_data in self._config_dict.items():
+            assets[robot_name] = self._create_robot_config(robot_name, config_data)
         return assets
 
     @property
@@ -125,7 +153,7 @@ class RobotAssetRegistry:
             self._assets = self._initialize_assets()
         return self._assets
 
-    def list_available_robots(self) -> List[str]:
+    def available_robots(self) -> List[str]:
         """Get list of available robot names."""
         return list(self.assets.keys())
 
@@ -133,7 +161,7 @@ class RobotAssetRegistry:
         """Get robot configuration by name."""
         robot_name = robot_name.lower()
         if robot_name not in self.assets:
-            available_robots = self.list_available_robots()
+            available_robots = self.available_robots()
             raise ValueError(f"Unsupported robot: {robot_name}. Available robots: {available_robots}")
         return self.assets[robot_name]
 
@@ -142,9 +170,9 @@ class RobotAssetRegistry:
 _registry = RobotAssetRegistry()
 
 
-def list_available_robots() -> List[str]:
+def available_robots() -> List[str]:
     """Get list of available robot names."""
-    return _registry.list_available_robots()
+    return _registry.available_robots()
 
 
 def get_robot_config(robot_name: str) -> RobotAssetConfig:
