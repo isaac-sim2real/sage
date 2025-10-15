@@ -40,6 +40,12 @@ ROBOT_CONFIGS = {
         "default_kp": 50.0,
         "default_kd": 1.0,
     },
+    "wr75s": {
+        "usd_path": "assets/realman_WR75S/realman_WR75S.usd",
+        "offset": (0.0, 0.0, 0.01),
+        "default_kp": 1000.0,
+        "default_kd": 200.0,
+    },
 }
 
 
