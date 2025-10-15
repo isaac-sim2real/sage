@@ -32,7 +32,7 @@ SAGE combines:
 - [Usage](#usage)
   - [Simulation Execution](#simulation-execution)
   - [Data Analysis](#data-analysis)
-  - [Real Robot Integration (Coming Soon)](#real-robot-integration-coming-soon)
+  - [Real Robot Integration](#real-robot-integration)
 - [Data Format](#data-format)
   - [Motion Files](#motion-files)
   - [Simulation Output](#simulation-output)
