@@ -47,6 +47,7 @@ def main():
     app = SimulationApp({"headless": args.headless})
 
     # Now import Isaac Sim modules after SimulationApp initialization
+    import carb  # noqa: E402
     import isaaclab.sim.schemas as schemas  # noqa: E402
     from isaacsim.core.api import World  # noqa: E402
     from isaacsim.core.prims import Articulation  # noqa: E402
@@ -64,6 +65,11 @@ def main():
     sim_module.create_new_stage = create_new_stage
     sim_module.capture_viewport_to_buffer = capture_viewport_to_buffer
     sim_module.create_prim = create_prim
+
+    # Set carb module in the assets module
+    import joint_motion_gap.assets as assets_module
+
+    assets_module.carb = carb
 
     # Get list of motion files to process
     motion_files = get_motion_files(args.motion_files)
