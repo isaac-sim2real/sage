@@ -73,12 +73,23 @@ class JointMotionBenchmark:
         self.headless = args.headless
         self.physics_freq = args.physics_freq
         self.render_freq = args.render_freq
-        self.control_freq = args.control_freq
+        self.arg_control_freq = args.control_freq
         self.original_control_freq = args.original_control_freq
         self.arg_kp = args.kp
         self.arg_kd = args.kd
         self.solver_type = args.solver_type
         self.record_video = args.record_video
+
+        self.robot_config = get_robot_config(self.robot_name)
+        # Resolve control_freq with priority: args > robot_config > error if both not set
+        config_control_freq = self.robot_config.get_config_value("default_control_freq", None)
+        self.control_freq = self.arg_control_freq if self.arg_control_freq is not None else config_control_freq
+
+        if self.control_freq is None:
+            raise ValueError(
+                f"No control frequency configured for robot {self.robot_name}. "
+                "Please provide --control-freq argument or configure 'default_control_freq' in robot config."
+            )
 
         # Check frequency divisibility
         if self.physics_freq % self.render_freq != 0:
@@ -125,7 +136,6 @@ class JointMotionBenchmark:
     def _setup_simulation(self):
         """Set up the simulation environment."""
         # Get robot configuration from assets
-        self.robot_config = get_robot_config(self.robot_name)
         self.prim_path = self.robot_config.prim_path
         self.robot_usd_path = self.robot_config.usd_path
         self.robot_offset = self.robot_config.offset

@@ -33,7 +33,7 @@ def main():
     parser.add_argument("--fix-root", action="store_true", default=False, help="Fix root joint")
     parser.add_argument("--physics-freq", type=int, default=200, help="Physics timestep frequency")
     parser.add_argument("--render-freq", type=int, default=200, help="Render timestep frequency")
-    parser.add_argument("--control-freq", type=int, default=50, help="Control timestep frequency")
+    parser.add_argument("--control-freq", type=int, default=None, help="Override default control frequency if provided")
     parser.add_argument(
         "--original-control-freq", type=int, default=None, help="Original control frequency of motion files"
     )
