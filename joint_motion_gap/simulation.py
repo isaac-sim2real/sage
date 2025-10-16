@@ -74,7 +74,6 @@ class JointMotionBenchmark:
         self.physics_freq = args.physics_freq
         self.render_freq = args.render_freq
         self.control_freq = args.control_freq
-        self.resample = args.resample
         self.original_control_freq = args.original_control_freq
         self.arg_kp = args.kp
         self.arg_kd = args.kd
@@ -310,7 +309,8 @@ class JointMotionBenchmark:
                     if values[valid_idx]:  # Only convert non-empty strings
                         joint_angles[i].append(float(values[valid_idx]))
 
-        if self.resample and self.original_control_freq != self.control_freq:
+        if self.original_control_freq is not None and self.original_control_freq != self.control_freq:
+            log_message(f"Resampling motion from {self.original_control_freq}Hz to {self.control_freq}Hz")
             joint_angles = np.array(joint_angles)
 
             # Check original trajectory length and new length to match target control freq
