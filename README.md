@@ -251,6 +251,15 @@ Each robot in `assets.py` can specify:
 - `default_kd`: Default damping gain for PD controller
 - `default_control_freq`: Default control frequency (Hz) for motion playback
 
+> **Parameter Priority System:**
+> Control parameters (`kp`, `kd`, `control_freq`, `original_control_freq`) are resolved in the following order:
+>
+> 1. **Command-line arguments** - Explicitly provided via `--kp`, `--kd`, `--control-freq`, `--original-control-freq`
+> 2. **Robot configuration** - Defaults from `assets.py` if arguments are not provided
+> 3. **Error** - Raises an error if neither source is configured
+>
+> This design allows robot-specific defaults while enabling per-run customization.
+
 **Supported Robots:** h1_2, g1, wr75s
 
 **Motion Sources:** amass
