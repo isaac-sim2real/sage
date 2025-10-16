@@ -73,23 +73,16 @@ class JointMotionBenchmark:
         self.headless = args.headless
         self.physics_freq = args.physics_freq
         self.render_freq = args.render_freq
-        self.arg_control_freq = args.control_freq
         self.original_control_freq = args.original_control_freq
-        self.arg_kp = args.kp
-        self.arg_kd = args.kd
         self.solver_type = args.solver_type
         self.record_video = args.record_video
 
         self.robot_config = get_robot_config(self.robot_name)
-        # Resolve control_freq with priority: args > robot_config > error if both not set
-        config_control_freq = self.robot_config.get_config_value("default_control_freq", None)
-        self.control_freq = self.arg_control_freq if self.arg_control_freq is not None else config_control_freq
 
-        if self.control_freq is None:
-            raise ValueError(
-                f"No control frequency configured for robot {self.robot_name}. "
-                "Please provide --control-freq argument or configure 'default_control_freq' in robot config."
-            )
+        # Resolve control parameters
+        self.control_freq = self._resolve_param(args.control_freq, "default_control_freq", "control-freq")
+        self.kp = self._resolve_param(args.kp, "default_kp", "kp")
+        self.kd = self._resolve_param(args.kd, "default_kd", "kd")
 
         # Check frequency divisibility
         if self.physics_freq % self.render_freq != 0:
@@ -114,6 +107,17 @@ class JointMotionBenchmark:
 
         # Initialize simulation environment
         self._setup_simulation()
+
+    def _resolve_param(self, arg_value, config_key, param_name):
+        """Resolve parameter with priority: args > robot_config, error if both not set"""
+        config_value = self.robot_config.get_config_value(config_key, None)
+
+        if arg_value is not None:
+            return arg_value
+        elif config_value is not None:
+            return config_value
+        else:
+            raise ValueError(f"No {param_name} configured for robot {self.robot_name}.")
 
     def _load_valid_joints(self):
         """Load valid joint names from valid_joints_file"""
@@ -229,33 +233,7 @@ class JointMotionBenchmark:
             f" Kd={dampings[0][0]}"
         )
 
-        # Use args or robot-specific PD values if available, error if neither
-        default_kp = self.robot_config.get_config_value("default_kp", None)
-        default_kd = self.robot_config.get_config_value("default_kd", None)
-
-        # Determine kp: use args if set, otherwise use config, error if neither
-        if self.arg_kp is not None:
-            kp = self.arg_kp
-        elif default_kp is not None:
-            kp = default_kp
-        else:
-            raise ValueError(
-                f"No kp value configured for robot {self.robot_name}."
-                "Please provide --kp argument or configure 'default_kp' in robot config."
-            )
-
-        # Determine kd: use args if set, otherwise use config, error if neither
-        if self.arg_kd is not None:
-            kd = self.arg_kd
-        elif default_kd is not None:
-            kd = default_kd
-        else:
-            raise ValueError(
-                f"No kd value configured for robot {self.robot_name}."
-                "Please provide --kd argument or configure 'default_kd' in robot config."
-            )
-
-        self.robot.set_gains(kps=kp, kds=kd, joint_indices=self.joint_indices)
+        self.robot.set_gains(kps=self.kp, kds=self.kd, joint_indices=self.joint_indices)
 
         stiffnesses, dampings = self.robot.get_gains(joint_indices=self.joint_indices)
         log_message(
