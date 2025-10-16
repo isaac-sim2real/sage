@@ -76,8 +76,8 @@ class JointMotionBenchmark:
         self.control_freq = args.control_freq
         self.resample = args.resample
         self.original_control_freq = args.original_control_freq
-        self.kp = args.kp
-        self.kd = args.kd
+        self.arg_kp = args.kp
+        self.arg_kd = args.kd
         self.solver_type = args.solver_type
         self.record_video = args.record_video
 
@@ -220,12 +220,33 @@ class JointMotionBenchmark:
             f" Kd={dampings[0][0]}"
         )
 
-        # Use robot-specific PD values if available, otherwise use defaults
-        default_kp = self.robot_config.get_config_value("default_kp", 50.0)
-        default_kd = self.robot_config.get_config_value("default_kd", 1.0)
-        self.robot.set_gains(kps=default_kp, kds=default_kd, joint_indices=self.joint_indices)
-        # Note: Currently just directly set to 50, 1 to follow upper body control in real world
-        self.robot.set_gains(kps=self.kp, kds=self.kd, joint_indices=self.joint_indices)
+        # Use args or robot-specific PD values if available, error if neither
+        default_kp = self.robot_config.get_config_value("default_kp", None)
+        default_kd = self.robot_config.get_config_value("default_kd", None)
+
+        # Determine kp: use args if set, otherwise use config, error if neither
+        if self.arg_kp is not None:
+            kp = self.arg_kp
+        elif default_kp is not None:
+            kp = default_kp
+        else:
+            raise ValueError(
+                f"No kp value configured for robot {self.robot_name}."
+                "Please provide --kp argument or configure 'default_kp' in robot config."
+            )
+
+        # Determine kd: use args if set, otherwise use config, error if neither
+        if self.arg_kd is not None:
+            kd = self.arg_kd
+        elif default_kd is not None:
+            kd = default_kd
+        else:
+            raise ValueError(
+                f"No kd value configured for robot {self.robot_name}."
+                "Please provide --kd argument or configure 'default_kd' in robot config."
+            )
+
+        self.robot.set_gains(kps=kp, kds=kd, joint_indices=self.joint_indices)
 
         stiffnesses, dampings = self.robot.get_gains(joint_indices=self.joint_indices)
         log_message(
