@@ -3,14 +3,14 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "joint-motion-gap"
+name = "sage"
 version = "0.1.0"
-description = "Joint Motion Gap Analysis Framework for Sim-to-Real Robot Performance Evaluation"
+description = "SAGE: Sim2Real Actuator Gap Estimator for Robot Performance Evaluation"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
-    {name = "JointMotionGap Team"},
+    {name = "SAGE Team"},
 ]
 keywords = ["robotics", "simulation", "isaac-sim", "motion-analysis", "sim-to-real"]
 dependencies = [
@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["joint_motion_gap"]
+packages = ["sage"]
 
 # Code formatting with Black
 [tool.black]

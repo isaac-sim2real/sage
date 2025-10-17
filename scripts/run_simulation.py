@@ -8,7 +8,7 @@
 
 import argparse
 
-from joint_motion_gap.simulation import JointMotionBenchmark, get_motion_files, get_motion_name, log_message
+from sage.simulation import JointMotionBenchmark, get_motion_files, get_motion_name, log_message
 
 
 def main():
@@ -61,7 +61,7 @@ def main():
     from omni.kit.viewport.utility import capture_viewport_to_buffer  # noqa: E402
 
     # Set the Isaac Sim modules in the simulation module
-    import joint_motion_gap.simulation as sim_module
+    import sage.simulation as sim_module
 
     sim_module.schemas = schemas
     sim_module.World = World
@@ -72,7 +72,7 @@ def main():
     sim_module.create_prim = create_prim
 
     # Set carb module in the assets module
-    import joint_motion_gap.assets as assets_module
+    import sage.assets as assets_module
 
     assets_module.carb = carb
 
