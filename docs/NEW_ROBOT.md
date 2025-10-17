@@ -129,20 +129,24 @@ ROBOT_CONFIGS = {
         "offset": (0.0, 0.0, 0.96),
         "default_kp": 100.0,
         "default_kd": 2.0,
+        "default_control_freq": 50,
     },
 }
 ```
 
 **Configuration Parameters:**
 
-| Parameter          | Type                         | Description                                                                           | Example                                  |
-| ------------------ | ---------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------- |
-| **Dictionary Key** | `str`                        | Robot identifier (lowercase, used as the robot name)                                  | `"gr1t2"`                                |
-| **`usd_path`**     | `str`                        | Path to USD file (relative to `<REPO_ROOT>` or use `{ISAAC_NUCLEUS_DIR}` placeholder) | `"assets/GR1T2_nohand/GR1T2_nohand.usd"` |
-| **`offset`**       | `tuple[float, float, float]` | Position offset `(x, y, z)` in meters (from Step 1.4)                                 | `(0.0, 0.0, 0.96)`                       |
-| **`prim_path`**    | `str` (optional)             | USD prim path for the robot                                                           | `"/World/Robot"` (default)               |
-| **`default_kp`**   | `float` (optional)           | Default proportional gain for PD controller                                           | `100.0`                                  |
-| **`default_kd`**   | `float` (optional)           | Default derivative gain for PD controller                                             | `2.0`                                    |
+| Parameter                  | Type                         | Required  | Description                                                                           | Example                                  |
+| -------------------------- | ---------------------------- | --------- | ------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **Dictionary Key**         | `str`                        | **Yes**   | Robot identifier (lowercase, used as the robot name)                                  | `"gr1t2"`                                |
+| **`usd_path`**             | `str`                        | **Yes**   | Path to USD file (relative to `<REPO_ROOT>` or use `{ISAAC_NUCLEUS_DIR}` placeholder) | `"assets/GR1T2_nohand/GR1T2_nohand.usd"` |
+| **`offset`**               | `tuple[float, float, float]` | **Yes**   | Position offset `(x, y, z)` in meters (from Step 1.4)                                 | `(0.0, 0.0, 0.96)`                       |
+| **`prim_path`**            | `str`                        | No        | USD prim path for the robot                                                           | `"/World/Robot"` (default)               |
+| **`default_kp`**           | `float`                      | **Yes\*** | Default proportional gain for PD controller                                           | `100.0`                                  |
+| **`default_kd`**           | `float`                      | **Yes\*** | Default derivative gain for PD controller                                             | `2.0`                                    |
+| **`default_control_freq`** | `int`                        | **Yes\*** | Default control frequency in Hz for motion playback                                   | `50`                                     |
+
+\* _Required unless overridden via command-line arguments (`--kp`, `--kd`, `--control-freq`)_
 
 **Important Notes:**
 
@@ -152,6 +156,10 @@ ROBOT_CONFIGS = {
   - **Nucleus path with placeholder**: `"{ISAAC_NUCLEUS_DIR}/Robots/Manufacturer/Model/robot.usd"` - For assets on Isaac Sim Nucleus server
   - The `{ISAAC_NUCLEUS_DIR}` placeholder is automatically resolved at runtime
 - **Offset values**: Use the Z-offset value you determined in Step 1.4
+- **Control Parameters**: The framework uses a priority system for control parameters:
+  1. Command-line arguments (`--kp`, `--kd`, `--control-freq`) take highest priority
+  2. Robot configuration defaults are used if arguments are not provided
+  3. An error is raised if neither is configured
 
 ## Step 3: Create Robot Configuration File
 
@@ -259,7 +267,6 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --motion-files motion_files/gr1t2/custom/custom_motion.txt \
     --valid-joints-file configs/gr1t2_valid_joints.txt \
     --output-folder results \
-    --control-freq 10 \
     --fix-root
 ```
 

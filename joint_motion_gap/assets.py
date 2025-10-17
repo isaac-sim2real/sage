@@ -24,7 +24,7 @@ carb = None
 #                     {ISAAC_NUCLEUS_DIR}, {ISAACLAB_NUCLEUS_DIR}
 #   - offset: (x, y, z) translation offset for robot placement
 #   - prim_path: (optional) USD prim path, defaults to "/World/Robot"
-#   - Additional fields like default_kp, default_kd are passed as kwargs
+#   - Additional fields like default_kp, default_kd, default_control_freq are passed as kwargs
 # ============================================================================
 
 ROBOT_CONFIGS = {
@@ -33,18 +33,21 @@ ROBOT_CONFIGS = {
         "offset": (0.0, 0.0, 1.1),
         "default_kp": 50.0,
         "default_kd": 1.0,
+        "default_control_freq": 50,
     },
     "g1": {
         "usd_path": "{ISAAC_NUCLEUS_DIR}/Robots/Unitree/G1/g1.usd",
         "offset": (0.0, 0.0, 0.82),
         "default_kp": 50.0,
         "default_kd": 1.0,
+        "default_control_freq": 50,
     },
     "wr75s": {
         "usd_path": "assets/realman_WR75S/realman_WR75S.usd",
         "offset": (0.0, 0.0, 0.01),
         "default_kp": 1000.0,
         "default_kd": 200.0,
+        "default_control_freq": 20,
     },
 }
 

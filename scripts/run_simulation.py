@@ -33,7 +33,12 @@ def main():
     parser.add_argument("--fix-root", action="store_true", default=False, help="Fix root joint")
     parser.add_argument("--physics-freq", type=int, default=200, help="Physics timestep frequency")
     parser.add_argument("--render-freq", type=int, default=200, help="Render timestep frequency")
-    parser.add_argument("--control-freq", type=int, default=50, help="Control timestep frequency")
+    parser.add_argument("--control-freq", type=int, default=None, help="Override default control frequency if provided")
+    parser.add_argument(
+        "--original-control-freq", type=int, default=None, help="Original control frequency of motion files"
+    )
+    parser.add_argument("--kp", type=int, default=None, help="Override default joint stiffness if provided")
+    parser.add_argument("--kd", type=int, default=None, help="Override default joint damping if provided")
     parser.add_argument("--solver-type", type=int, default=1, help="Solver type TGS = 1 PGS = 0")
     parser.add_argument("--headless", action="store_true", help="Run in headless mode")
     parser.add_argument("--record-video", action="store_true", help="Record video")
