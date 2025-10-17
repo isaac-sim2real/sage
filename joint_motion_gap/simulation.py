@@ -15,6 +15,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import omni
+from scipy.interpolate import interp1d
 
 from .assets import get_robot_config
 
@@ -72,9 +73,16 @@ class JointMotionBenchmark:
         self.headless = args.headless
         self.physics_freq = args.physics_freq
         self.render_freq = args.render_freq
-        self.control_freq = args.control_freq
+        self.original_control_freq = args.original_control_freq
         self.solver_type = args.solver_type
         self.record_video = args.record_video
+
+        self.robot_config = get_robot_config(self.robot_name)
+
+        # Resolve control parameters
+        self.control_freq = self._resolve_param(args.control_freq, "default_control_freq", "control-freq")
+        self.kp = self._resolve_param(args.kp, "default_kp", "kp")
+        self.kd = self._resolve_param(args.kd, "default_kd", "kd")
 
         # Check frequency divisibility
         if self.physics_freq % self.render_freq != 0:
@@ -100,6 +108,17 @@ class JointMotionBenchmark:
         # Initialize simulation environment
         self._setup_simulation()
 
+    def _resolve_param(self, arg_value, config_key, param_name):
+        """Resolve parameter with priority: args > robot_config, error if both not set"""
+        config_value = self.robot_config.get_config_value(config_key, None)
+
+        if arg_value is not None:
+            return arg_value
+        elif config_value is not None:
+            return config_value
+        else:
+            raise ValueError(f"No {param_name} configured for robot {self.robot_name}.")
+
     def _load_valid_joints(self):
         """Load valid joint names from valid_joints_file"""
         if self.valid_joints_file is not None:
@@ -121,7 +140,6 @@ class JointMotionBenchmark:
     def _setup_simulation(self):
         """Set up the simulation environment."""
         # Get robot configuration from assets
-        self.robot_config = get_robot_config(self.robot_name)
         self.prim_path = self.robot_config.prim_path
         self.robot_usd_path = self.robot_config.usd_path
         self.robot_offset = self.robot_config.offset
@@ -215,10 +233,7 @@ class JointMotionBenchmark:
             f" Kd={dampings[0][0]}"
         )
 
-        # Use robot-specific PD values if available, otherwise use defaults
-        default_kp = self.robot_config.get_config_value("default_kp", 50.0)
-        default_kd = self.robot_config.get_config_value("default_kd", 1.0)
-        self.robot.set_gains(kps=default_kp, kds=default_kd, joint_indices=self.joint_indices)
+        self.robot.set_gains(kps=self.kp, kds=self.kd, joint_indices=self.joint_indices)
 
         stiffnesses, dampings = self.robot.get_gains(joint_indices=self.joint_indices)
         log_message(
@@ -281,6 +296,30 @@ class JointMotionBenchmark:
                 for i, valid_idx in enumerate(valid_indices):
                     if values[valid_idx]:  # Only convert non-empty strings
                         joint_angles[i].append(float(values[valid_idx]))
+
+        if self.original_control_freq is not None and self.original_control_freq != self.control_freq:
+            log_message(f"Resampling motion from {self.original_control_freq}Hz to {self.control_freq}Hz")
+            joint_angles = np.array(joint_angles)
+
+            # Check original trajectory length and new length to match target control freq
+            old_len, num_joints = joint_angles.shape
+            duration = old_len / self.original_control_freq
+            new_len = int(round(duration * self.control_freq))
+
+            # Create linspace for resample
+            old_times = np.linspace(0, duration, old_len, endpoint=False)
+            new_times = np.linspace(0, duration, new_len, endpoint=False)
+            # Cap new time and fill with last value
+            new_times = new_times[new_times <= old_times[-1]]
+            new_times = np.append(new_times, old_times[-1])
+            new_len = len(new_times)
+
+            # Resample
+            new_angles = np.zeros((new_len, num_joints), dtype=joint_angles.dtype)
+            for i in range(num_joints):
+                f = interp1d(old_times, joint_angles[:, i], kind="linear")
+                new_angles[:, i] = f(new_times)
+            joint_angles = new_angles.T.tolist()
 
         return joint_angles, self.joint_names
 
