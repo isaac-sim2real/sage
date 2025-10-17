@@ -11,6 +11,7 @@ This project provides tools for collecting and processing motion data from Realm
     ```
 2. **Install required packages:**
     ```bash
+    pip install Robotic_Arm_Custom
     pip install numpy matplotlib h5py joblib scipy pandas
     ```
 
