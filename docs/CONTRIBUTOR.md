@@ -44,7 +44,7 @@ Vikas Sharma, Product Manager
 
 ## PKU
 
-Zhenghao Qi, Undergraduate in Department of Automation, Tsinghua University
+Zhenghao Qi, PhD Candidate, PKU Institute for Artificial Intelligence; Undergraduate in Department of Automation, Tsinghua University
 
 <img src="images/zhenghao_qi.png" alt="Zhenghao Qi" width="150"/>
 
