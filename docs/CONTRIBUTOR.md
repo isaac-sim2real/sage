@@ -38,7 +38,7 @@ Rita Zhang, Director, Research and OSS Developer Relationship, High Education Re
 
 ## NVIDIA Product Team
 
-Vikas Sharma
+Vikas Sharma, Product Manager
 
 <img src="images/vikas_sharma.png" alt="Vikas Sharma" width="150"/>
 
