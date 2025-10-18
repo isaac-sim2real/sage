@@ -40,7 +40,7 @@ Rita Zhang, Director, Research and OSS Developer Relationship, High Education Re
 
 Vikas Sharma
 
-<img src="images/Vikas_sharma.png" alt="Vikas Sharma" width="150"/>
+<img src="images/vikas_sharma.png" alt="Vikas Sharma" width="150"/>
 
 ## PKU
 
