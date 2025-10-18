@@ -9,7 +9,7 @@
 import argparse
 from pathlib import Path
 
-from joint_motion_gap.analysis import RobotDataComparator
+from sage.analysis import RobotDataComparator
 
 
 def main():

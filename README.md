@@ -1,4 +1,4 @@
-<h1 align="center"> Joint Motion Gap Analysis Framework </h1>
+<h1 align="center"> SAGE: Sim2Real Actuator Gap Estimator </h1>
 
 <div align="center">
 
@@ -12,9 +12,9 @@
 
 ## Overview
 
-Joint Motion Gap Analysis Framework is a comprehensive toolkit for analyzing the differences between simulated and real robot joint motions. This project provides systematic tools for measuring, visualizing, and understanding sim-to-real gaps in robotic systems, enabling researchers and engineers to quantify and improve the transfer of robot behaviors from simulation to reality.
+SAGE (Sim2Real Actuator Gap Estimator) is a comprehensive toolkit for analyzing the differences between simulated and real robot joint motions. This project provides systematic tools for measuring, visualizing, and understanding sim-to-real gaps in robotic systems, enabling researchers and engineers to quantify and improve the transfer of robot behaviors from simulation to reality.
 
-Joint Motion Gap Framework combines:
+SAGE combines:
 
 - **Isaac Sim simulation** for physics-based robot motion execution
 - **Multi-metric evaluation** with statistical analysis and visualization
@@ -66,8 +66,8 @@ Follow the [Isaac Lab installation guide](https://isaac-sim.github.io/IsaacLab/m
 
 ```bash
 # Clone the repository
-git clone https://github.com/isaac-sim2real/joint-motion-gap.git
-cd joint-motion-gap
+git clone https://github.com/isaac-sim2real/sage.git
+cd sage
 
 # Install dependencies
 pip install -r requirements.txt
@@ -236,7 +236,7 @@ Real robot integration steps will be documented as the framework evolves to supp
 
 ### Files and Directories
 
-- **Robot Asset Configurations**: `joint_motion_gap/assets.py`
+- **Robot Asset Configurations**: `sage/assets.py`
 - **Robot Assets**: `assets/{robot_name}/`
 - **Valid Joints**: `configs/{robot_name}_valid_joints.txt`
 - **Motion Files**: `motion_files/{robot_name}/{source}/`
@@ -264,6 +264,10 @@ Each robot in `assets.py` can specify:
 
 **Motion Sources:** amass
 
+## Contributors
+
+See [Contributors](docs/CONTRIBUTOR.md) for the list of project contributors.
+
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on code style and pull request process.
@@ -277,10 +281,10 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 If you use this framework in your research, please cite:
 
 ```bibtex
-@misc{joint-motion-gap-2025,
-  title={Joint Motion Gap Analysis Framework},
-  author={JointMotionGap Team},
+@misc{sage-2025,
+  title={SAGE: Sim2Real Actuator Gap Estimator},
+  author={SAGE Team},
   year={2025},
-  url={https://github.com/your-org/joint-motion-gap}
+  url={https://github.com/isaac-sim2real/sage}
 }
 ```

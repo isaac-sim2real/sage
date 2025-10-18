@@ -1,6 +1,6 @@
 # Guide to Add a New Robot
 
-This document provides a comprehensive minimal guide for adding a new robot to the joint-motion-gap project. We use the **Fourier GR1T2** robot as an example throughout this guide.
+This document provides a comprehensive minimal guide for adding a new robot to the SAGE project. We use the **Fourier GR1T2** robot as an example throughout this guide.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ This document provides a comprehensive minimal guide for adding a new robot to t
 
 Throughout this document:
 
-- `<REPO_ROOT>` refers to your joint-motion-gap project root directory
+- `<REPO_ROOT>` refers to your SAGE project root directory
 - **GR1T2** is used as the example robot name throughout the guide
 
 **Important:** When following this guide for your robot, replace:
@@ -22,8 +22,8 @@ Throughout this document:
 
 **Example:**
 
-- If your project is at `/home/user/joint-motion-gap/` and your robot is "atlas"
-- Then `<REPO_ROOT>/configs/gr1t2_valid_joints.txt` becomes `/home/user/joint-motion-gap/configs/atlas_valid_joints.txt`
+- If your project is at `/home/user/sage/` and your robot is "atlas"
+- Then `<REPO_ROOT>/configs/gr1t2_valid_joints.txt` becomes `/home/user/sage/configs/atlas_valid_joints.txt`
 
 ## Step 1: Prepare New Robot Asset
 
@@ -117,7 +117,7 @@ _Figure 4: Robot Z-Offset Testing_
 
 ### 2.1 Add Robot Configuration
 
-Locate the `ROBOT_CONFIGS` dictionary in `<REPO_ROOT>/joint_motion_gap/assets.py` and add your robot entry:
+Locate the `ROBOT_CONFIGS` dictionary in `<REPO_ROOT>/sage/assets.py` and add your robot entry:
 
 ```python
 ROBOT_CONFIGS = {
