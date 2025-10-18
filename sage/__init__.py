@@ -7,7 +7,7 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 __version__ = "0.1.0"
-__author__ = "JointMotionGap Team"
+__author__ = "SAGE Team"
 
 # Import analysis module (no external dependencies)
 from .analysis import RobotDataComparator

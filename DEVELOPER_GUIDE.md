@@ -1,6 +1,6 @@
 # Developer Guide
 
-This document serves as the developer guide for the `joint-motion-gap` project, covering development workflows, code standards, and important development information.
+This document serves as the developer guide for the SAGE (Sim2Real Actuator Gap Estimator) project, covering development workflows, code standards, and important development information.
 
 ## 🚀 Development Workflow
 
@@ -156,8 +156,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # 3. Local application/library imports
-from joint_motion_gap.simulation import JointMotionBenchmark
-from joint_motion_gap.analysis import RobotDataProcessor
+from sage.simulation import JointMotionBenchmark
+from sage.analysis import RobotDataProcessor
 ```
 
 **Docstrings**

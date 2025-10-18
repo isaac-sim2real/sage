@@ -8,7 +8,7 @@
 ## [0.1.0] - 2025-09-05
 
 ### Added
-- Initial release of Joint Motion Gap Analysis Framework
+- Initial release of SAGE (Sim2Real Actuator Gap Estimator)
 - Simulation execution using Isaac Sim
 - Data analysis with multiple metrics (RMSE, MAPE, correlation, cosine similarity)
 - Visualization tools including boxplots and joint comparison plots
