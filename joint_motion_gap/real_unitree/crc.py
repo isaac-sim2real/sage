@@ -7,9 +7,6 @@ import cyclonedds.idl as idl
 from unitree_hg.msg import LowCmd as HGLowCmd_
 from unitree_hg.msg import LowState as HGLowState_
 
-# from unitree_go.msg import LowCmd as LowCmd_
-# from unitree_go.msg import LowState as LowState_
-
 
 class Singleton:
     __instance = None
@@ -48,90 +45,6 @@ class CRC(Singleton):
 
     def Crc(self, msg: idl.IdlStruct):
         return self.__Crc32(self.__PackHGLowCmd(msg))
-
-    # def __PackLowCmd(self, cmd: LowCmd_):
-    #     origData = []
-    #     origData.extend(cmd.head)
-    #     origData.append(cmd.level_flag)
-    #     origData.append(cmd.frame_reserve)
-    #     origData.extend(cmd.sn)
-    #     origData.extend(cmd.version)
-    #     origData.append(cmd.bandwidth)
-
-    #     for i in range(20):
-    #         origData.append(cmd.motor_cmd[i].mode)
-    #         origData.append(cmd.motor_cmd[i].q)
-    #         origData.append(cmd.motor_cmd[i].dq)
-    #         origData.append(cmd.motor_cmd[i].tau)
-    #         origData.append(cmd.motor_cmd[i].kp)
-    #         origData.append(cmd.motor_cmd[i].kd)
-    #         origData.extend(cmd.motor_cmd[i].reserve)
-
-    #     origData.append(cmd.bms_cmd.off)
-    #     origData.extend(cmd.bms_cmd.reserve)
-
-    #     origData.extend(cmd.wireless_remote)
-    #     origData.extend(cmd.led)
-    #     origData.extend(cmd.fan)
-    #     origData.append(cmd.gpio)
-    #     origData.append(cmd.reserve)
-    #     origData.append(cmd.crc)
-
-    #     return self.__Trans(struct.pack(self.__packFmtLowCmd, *origData))
-
-    # def __PackLowState(self, state: LowState_):
-    #     origData = []
-    #     origData.extend(state.head)
-    #     origData.append(state.level_flag)
-    #     origData.append(state.frame_reserve)
-    #     origData.extend(state.sn)
-    #     origData.extend(state.version)
-    #     origData.append(state.bandwidth)
-
-    #     origData.extend(state.imu_state.quaternion)
-    #     origData.extend(state.imu_state.gyroscope)
-    #     origData.extend(state.imu_state.accelerometer)
-    #     origData.extend(state.imu_state.rpy)
-    #     origData.append(state.imu_state.temperature)
-
-    #     for i in range(20):
-    #         origData.append(state.motor_state[i].mode)
-    #         origData.append(state.motor_state[i].q)
-    #         origData.append(state.motor_state[i].dq)
-    #         origData.append(state.motor_state[i].ddq)
-    #         origData.append(state.motor_state[i].tau_est)
-    #         origData.append(state.motor_state[i].q_raw)
-    #         origData.append(state.motor_state[i].dq_raw)
-    #         origData.append(state.motor_state[i].ddq_raw)
-    #         origData.append(state.motor_state[i].temperature)
-    #         origData.append(state.motor_state[i].lost)
-    #         origData.extend(state.motor_state[i].reserve)
-
-    #     origData.append(state.bms_state.version_high)
-    #     origData.append(state.bms_state.version_low)
-    #     origData.append(state.bms_state.status)
-    #     origData.append(state.bms_state.soc)
-    #     origData.append(state.bms_state.current)
-    #     origData.append(state.bms_state.cycle)
-    #     origData.extend(state.bms_state.bq_ntc)
-    #     origData.extend(state.bms_state.mcu_ntc)
-    #     origData.extend(state.bms_state.cell_vol)
-
-    #     origData.extend(state.foot_force)
-    #     origData.extend(state.foot_force_est)
-    #     origData.append(state.tick)
-    #     origData.extend(state.wireless_remote)
-    #     origData.append(state.bit_flag)
-    #     origData.append(state.adc_reel)
-    #     origData.append(state.temperature_ntc1)
-    #     origData.append(state.temperature_ntc2)
-    #     origData.append(state.power_v)
-    #     origData.append(state.power_a)
-    #     origData.extend(state.fan_frequency)
-    #     origData.append(state.reserve)
-    #     origData.append(state.crc)
-
-    #     return self.__Trans(struct.pack(self.__packFmtLowState, *origData))
 
     def __PackHGLowCmd(self, cmd: HGLowCmd_):
         origData = []
