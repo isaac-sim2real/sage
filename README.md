@@ -125,10 +125,10 @@ python scripts/run_analysis.py \
 
 ### Real Robot Integration
 
-Different robot manufacturers provide different control APIs. Here, we offer guidelines for integrating robots from **Unitree** and **Realman**.
+**Different robot manufacturers provide different control APIs**, so real code need extra package requirements.
 
-- **Unitree Robots**: Both Unitree G1 and H1 have been tested. For simulation integration instructions, please refer to [joint_motion_gap/real_unitree/README.md](joint_motion_gap/real_unitree/README.md).
-- **Realman Robots**: Realman G1 has been tested. For simulation integration instructions, please refer to [joint_motion_gap/real_realman/README.md](joint_motion_gap/real_realman/README.md).
+Both **Unitree G1 and H1-2** have been tested. Also, **Realman WR75S** has been tested. Detailed guidelines can be found in [UNITREE_REAL.md](docs/UNITREE_REAL.md) and [REALMAN_REAL.md](docs/REALMAN_REAL.md).
+
 
 ## Data Format
 
