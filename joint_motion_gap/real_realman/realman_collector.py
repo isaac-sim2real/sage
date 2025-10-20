@@ -5,9 +5,22 @@ import time
 
 import numpy as np
 import pandas as pd
-from realman_class import HumanoidDualArmCollector
+from realman_humanoid import HumanoidDualArmCollector
 from scipy.interpolate import interp1d
-from utils import interpolate_motion
+
+
+
+def interpolate_motion(seq, original_freq, target_freq):
+    n_frames, n_joints = seq.shape
+    duration = (n_frames - 1) / original_freq
+    t_src = np.linspace(0, duration, n_frames)
+    new_n_frames = int(duration * target_freq) + 1
+    t_dst = np.linspace(0, duration, new_n_frames)
+    seq_interp = np.zeros((new_n_frames, n_joints))
+    for j in range(n_joints):
+        f = interp1d(t_src, seq[:, j], kind='linear')
+        seq_interp[:, j] = f(t_dst)
+    return seq_interp
 
 
 def load_motion_from_txt(txt_file_path):
@@ -432,7 +445,7 @@ def convert_h5_to_csv(h5_file_path, output_dir):
     print(f"Successfully converted {h5_file_path} to CSV format")
 
 
-def real_realman_main(txt_file_path, save_data_path):
+def realman_collector_main(txt_file_path, save_data_path):
     # Single file collection example
     arm1_ip = "192.168.1.188"
     arm2_ip = "192.168.1.188"
@@ -459,4 +472,4 @@ def real_realman_main(txt_file_path, save_data_path):
 
 
 if __name__ == "__main__":
-    real_realman_main(txt_file_path="data/txt_export_50Hz/some_motion_idx0.txt", save_data_path="data/runs_csv")
+    realman_collector_main(txt_file_path="data/txt_export_50Hz/some_motion_idx0.txt", save_data_path="data/runs_csv")
