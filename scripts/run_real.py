@@ -20,4 +20,4 @@ if __name__ == "__main__":
     if args.robot_name == "h12" or args.robot_name == "g1":
         unitree_robot_main(args.robot_name, motion_file, output_dir)
     elif args.robot_name == "realman":
-        real_realman_main(motion_file, output_dir)
+        realman_collector_main(motion_file, output_dir)
