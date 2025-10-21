@@ -9,8 +9,8 @@
 import argparse
 import os
 
-from sage.real_realman import realman_collector_main
-from sage.real_unitree import unitree_collector_main
+from sage.real_realman.realman_collector import realman_collector_main
+from sage.real_unitree.unitree_collector import unitree_collector_main
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

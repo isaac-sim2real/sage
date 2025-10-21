@@ -13,7 +13,7 @@ import time
 
 import numpy as np
 import pandas as pd
-from realman_humanoid import HumanoidDualArmCollector
+from realman_dual_arm import HumanoidDualArmCollector
 from scipy.interpolate import interp1d
 
 

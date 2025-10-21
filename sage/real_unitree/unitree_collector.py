@@ -25,8 +25,8 @@ import rclpy
 from crc import CRC
 from gamepad import Gamepad, parse_remote_data
 from rclpy.node import Node
-from robot_config import get_robot_config, list_available_robots, print_robot_info
 from scipy.interpolate import interp1d
+from unitree_configs import get_robot_config, list_available_robots, print_robot_info
 from unitree_hg.msg import LowCmd, LowState, MotorCmd
 
 crc = CRC()
