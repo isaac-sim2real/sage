@@ -46,8 +46,10 @@ def load_motion_from_txt(txt_file_path):
     data = data_df.values  # (n, 14)
 
     # Separate left and right arm data
-    left_seq = data[:, :7]  # first 7 columns: left arm
-    right_seq = data[:, 7:]  # last 7 columns: right arm
+    # first 7 columns: left arm
+    left_seq = data[:, :7]
+    # last 7 columns: right arm
+    right_seq = data[:, 7:]
 
     # Extract motion name from file name
     motion_name = os.path.splitext(os.path.basename(txt_file_path))[0]
@@ -87,7 +89,7 @@ def synchronize_dual_arm_data(data1, data2):
 
     # Choose the one with fewer samples as the target time series (reduce interpolation error)
     if len(time1_valid) <= len(time2_valid):
-        # 使用time1作为目标时间序列，对data2进行插值
+        # Use time1 as the target time series and interpolate data2
         target_time = time1_valid
 
         # data1 uses valid range directly
@@ -129,7 +131,7 @@ def synchronize_dual_arm_data(data1, data2):
                 sync_data2[key] = interp_func(target_time)
 
     else:
-        # 使用time2作为目标时间序列，对data1进行插值
+        # Interpolate data1 using time2 as the target time series
         target_time = time2_valid
 
         # data2 uses valid range directly
@@ -217,7 +219,7 @@ def save_motion_csv_files(
         for i, (time_val, command_val) in enumerate(zip(command_time_list, command_val_list)):
             writer.writerow(["CONTROL", time_val * 1e5, command_val.tolist()])
 
-    # 3. 保存 event.csv (事件数据)
+    # 3.Save event data .csv
     event_file = os.path.join(motion_dir, "event.csv")
     with open(event_file, "w", newline="") as f:
         writer = csv.writer(f)
@@ -273,16 +275,13 @@ def collect_motion_data_from_txt(
         error_code: error code
         error_joint_list: error joint list
     """
-    # 加载运动数据
+    # load motion data
     left_seq, right_seq, robot_joint_names, motion_frequence, motion_name = load_motion_from_txt(txt_file_path)
 
-    target_motion_freq = 50  # 目标控制帧率
+    # targeted control frame rate
+    target_motion_freq = 50
     left_seq = interpolate_motion(left_seq, motion_frequence, target_motion_freq)
     right_seq = interpolate_motion(right_seq, motion_frequence, target_motion_freq)
-
-    # # TODO: test code
-    # left_seq *= 0.1
-    # right_seq *= 0.1
 
     n_steps = left_seq.shape[0]
 
@@ -292,7 +291,8 @@ def collect_motion_data_from_txt(
     command_time_list = []
     command_val_list = []
 
-    control_frequence = 200  # Control frequency fixed at 200Hz
+    # Control frequency fixed at 200Hz
+    control_frequence = 200
     assert slowdown_factor in (1, 2, 3, 5, 10), "slowdown_factor only supports 1, 2, 3, 5 or 10"
 
     steps_per_motion = control_frequence // target_motion_freq * slowdown_factor
@@ -330,18 +330,18 @@ def collect_motion_data_from_txt(
             elapsed = loop_end - loop_start
             sleeptime = max(0, loop_time - elapsed)
 
-            # Exception handling ----------------
             error_code, error_joint_list = collector.report_errors()
             if error_code:
-                collector.clean_data()  # Clear data cache
+                # Clear data cache
+                collector.clean_data()
                 return error_code, error_joint_list
 
             if collector.stop_trigger:
-                collector.clean_data()  # Clear data cache
-                return 3, []  # Return force stop status
-            # ------------------------
+                # Clear data cache
+                collector.clean_data()
+                # Return force stop status
+                return 3, []
 
-            # logger -----------------
             if sleeptime > 0:
                 time.sleep(sleeptime)
             if (i % 50 == 0) and (j == 0):
@@ -377,71 +377,6 @@ def collect_motion_data_from_txt(
     collector.clean_data()  # Clear data cache
 
     return 0, []  # Return success status and empty error list
-
-
-def convert_h5_to_csv(h5_file_path, output_dir):
-    """
-    Convert existing h5 file to CSV format
-
-    Args:
-        h5_file_path: h5 file path
-        output_dir: output directory
-    """
-    import h5py
-
-    with h5py.File(h5_file_path, "r") as f:
-        # Read basic info
-        motion_name = f["motion_name"][()].decode("utf-8") if "motion_name" in f else "unknown_motion"
-
-        # Read command data
-        command_time_list = f["command_time_list"][:]
-        command_val_list = f["command_val_list"][:]
-
-        # Read robot data
-        data1 = {
-            "time": f["robot1/joint_time_list"][:],
-            "angle_rad": f["robot1/joint_angle_list"][:],
-            "velocity_rads": f["robot1/joint_velocity_list"][:],
-            "current": f["robot1/joint_current_list"][:],
-        }
-
-        data2 = {
-            "time": f["robot2/joint_time_list"][:],
-            "angle_rad": f["robot2/joint_angle_list"][:],
-            "velocity_rads": f["robot2/joint_velocity_list"][:],
-            "current": f["robot2/joint_current_list"][:],
-        }
-
-        # Default joint names
-        robot_joint_names = [
-            "L_joint1",
-            "L_joint2",
-            "L_joint3",
-            "L_joint4",
-            "L_joint5",
-            "L_joint6",
-            "L_joint7",
-            "R_joint1",
-            "R_joint2",
-            "R_joint3",
-            "R_joint4",
-            "R_joint5",
-            "R_joint6",
-            "R_joint7",
-        ]
-
-        # Save CSV files
-        save_motion_csv_files(
-            output_dir=output_dir,
-            motion_name=motion_name,
-            command_time_list=command_time_list,
-            command_val_list=command_val_list,
-            robot_joint_names=robot_joint_names,
-            data1=data1,
-            data2=data2,
-        )
-
-    print(f"Successfully converted {h5_file_path} to CSV format")
 
 
 def realman_collector_main(txt_file_path, save_data_path):

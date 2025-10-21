@@ -14,20 +14,15 @@ from typing import Any, Dict, Optional
 
 import joblib
 import numpy as np
-
-# ROS2 imports
 import rclpy
 from crc import CRC
 from gamepad import Gamepad, parse_remote_data
 from rclpy.node import Node
-
-# Import robot configuration
 from robot_config import get_robot_config, list_available_robots, print_robot_info
 from scipy.interpolate import interp1d
 from unitree_hg.msg import LowCmd, LowState, MotorCmd
 
 crc = CRC()
-# Constants will be set dynamically based on robot config
 
 
 class MotionState(Enum):
@@ -49,8 +44,10 @@ class MotionInfo:
     state: MotionState = MotionState.STOPPED
     return_counter: int = 0
     last_frame_position: Optional[np.ndarray] = None
-    playback_speed: float = 0.2  # Playback speed multiplier
-    frame_accumulator: float = 0.0  # For non-integer frame stepping
+    # Playback speed multiplier
+    playback_speed: float = 0.2
+    # For non-integer frame stepping
+    frame_accumulator: float = 0.0
 
 
 class MotionManager:
@@ -110,7 +107,8 @@ class MotionManager:
         # Parse motion data from subsequent lines (skip first line)
         motion_frames = []
         for line in lines[1:]:
-            if not line.strip():  # Skip empty lines
+            if not line.strip():
+                # Skip empty lines
                 continue
             values = [float(val.strip()) for val in line.strip().split(",")]
             if len(values) == len(joint_names):
@@ -125,7 +123,8 @@ class MotionManager:
         # Create motion data structure - motion name is filename without extension
         motion_name = os.path.splitext(os.path.basename(self.motion_file_path))[0]
         self.motion_data = {
-            motion_name: {"dof": dof_data, "fps": 50, "joint_names": joint_names}  # TXT files are at 50Hz
+            # TXT files are at 50Hz
+            motion_name: {"dof": dof_data, "fps": 50, "joint_names": joint_names}
         }
 
         self.motion_names = [motion_name]
@@ -430,7 +429,8 @@ class MultiRobotMotionControlNode(Node):
 
         # Control state
         self.motion_active = False
-        self.current_speed = 1.0  # Current playback speed
+        # Current playback speed
+        self.current_speed = 1.0
 
         # Data recording control
         self.is_recording = False
@@ -478,7 +478,6 @@ class MultiRobotMotionControlNode(Node):
 
         # Gamepad
         self.gamepad = Gamepad()
-        # self.crc = CRC()
 
         # State variables
         self.joint_positions = np.zeros(self.robot_config.hw_dof)
@@ -878,7 +877,6 @@ class MultiRobotMotionControlNode(Node):
 
                 # Record IMU data
                 self.recording_data["imu_data"].append(self.obs_imu.copy())
-                # self.recording_data['ang_vel_data'].append(self.obs_ang_vel.copy())
 
                 # Record command values
                 target_positions = self._compute_target_positions()
