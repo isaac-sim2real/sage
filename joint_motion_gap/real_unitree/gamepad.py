@@ -114,19 +114,3 @@ def parse_remote_data(buffer):
     buttons.update({"lx": lx, "rx": rx, "ry": ry, "l2": l2, "ly": ly})
 
     return buttons
-
-
-# Usage example
-if __name__ == "__main__":
-    # Example 40-byte buffer (mocked data)
-    mock_buffer = bytes([0xAA, 0xBB, 0x01, 0x02] + [0x00] * 36)
-
-    # Parse the buffer
-    gamepad = Gamepad()
-    parsed_data = parse_remote_data(mock_buffer)
-    gamepad.update(parsed_data)
-
-    # Print the parsed values
-    print("Parsed Gamepad State:")
-    print(f"LX: {gamepad.lx}, RX: {gamepad.rx}, RY: {gamepad.ry}, L2: {gamepad.l2}, LY: {gamepad.ly}")
-    print(f"Button A pressed: {gamepad.A.pressed}, Button B pressed: {gamepad.B.pressed}")

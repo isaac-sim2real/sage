@@ -4,7 +4,6 @@ Multi-Robot Motion Data Collection Pipeline
 Supports both G1 and H1-2 robots with unified motion playback system
 """
 
-import argparse
 import csv
 import os
 import time
@@ -923,22 +922,3 @@ def unitree_robot_main(robot_name, motion_file, output_dir):
         print("Shutting down...")
     finally:
         rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Multi-Robot Motion Data Collection Pipeline")
-    parser.add_argument("--robot-name", "-r", type=str, default="g1", help="Robot type (g1 or h12). Default: g1")
-    parser.add_argument("--motion-file", "-m", type=str, help="Path to motion TXT file to load")
-    parser.add_argument(
-        "--output-dir", "-o", type=str, default="./output", help="Output directory for CSV files. Default: ./output"
-    )
-    parser.add_argument("--list-robots", "-l", action="store_true", help="List available robots and exit")
-
-    args = parser.parse_args()
-
-    if args.list_robots:
-        print("Available robots:", list_available_robots())
-        exit(0)
-
-    unitree_robot_main(args.robot_name, args.motion_file, args.output_dir)

@@ -450,26 +450,3 @@ def print_robot_info(config: RobotConfig):
     print(f"Upper body joints: {len(config.upper_body_joints)} joints")
     print(f"Control frequency: {config.control_frequency}Hz")
     print(f"Motion file: {config.motion_file_path}")
-
-
-if __name__ == "__main__":
-    # Test the configuration system
-    print("Testing robot configuration system...")
-
-    # Test G1 config
-    g1_config = get_robot_config("g1")
-    print("\n" + "=" * 50)
-    print_robot_info(g1_config)
-
-    # Test H1-2 config
-    h12_config = get_robot_config("h12")
-    print("\n" + "=" * 50)
-    print_robot_info(h12_config)
-
-    # Test error handling
-    try:
-        get_robot_config("unknown_robot")
-    except ValueError as e:
-        print(f"Error handling test: {e}")
-
-    print(f"Available robots: {list_available_robots()}")

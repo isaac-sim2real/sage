@@ -9,7 +9,6 @@ from realman_humanoid import HumanoidDualArmCollector
 from scipy.interpolate import interp1d
 
 
-
 def interpolate_motion(seq, original_freq, target_freq):
     n_frames, n_joints = seq.shape
     duration = (n_frames - 1) / original_freq
@@ -18,7 +17,7 @@ def interpolate_motion(seq, original_freq, target_freq):
     t_dst = np.linspace(0, duration, new_n_frames)
     seq_interp = np.zeros((new_n_frames, n_joints))
     for j in range(n_joints):
-        f = interp1d(t_src, seq[:, j], kind='linear')
+        f = interp1d(t_src, seq[:, j], kind="linear")
         seq_interp[:, j] = f(t_dst)
     return seq_interp
 
@@ -469,7 +468,3 @@ def realman_collector_main(txt_file_path, save_data_path):
 
     finally:
         collector.close()
-
-
-if __name__ == "__main__":
-    realman_collector_main(txt_file_path="data/txt_export_50Hz/some_motion_idx0.txt", save_data_path="data/runs_csv")

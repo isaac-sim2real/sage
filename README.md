@@ -125,37 +125,26 @@ python scripts/run_analysis.py \
 
 ### Real Robot Integration
 
-**Different robot manufacturers provide different control APIs**, so real code need extra package requirements.
+**Different robot manufacturers provide different control APIs and dependencies.** For example, Unitree robots require ROS2 and Unitree SDK, while Realman robots require their proprietary `Robotic_Arm_Custom package`. See the robot-specific documentation below for detailed installation instructions.
 
-- For Unitree robots, we need:
+**Supported robots:**
 
-    **Install ROS2 Foxy:**
-      Follow the official [ROS2 Foxy installation guide](https://docs.ros.org/en/foxy/Installation.html)
+- **Unitree G1** and **H1-2** humanoid robots
+- **Realman WR75S** dual-arm robot
 
-    **Install Unitree SDK:**
-      Refer to [Unitree_ros2](https://github.com/unitreerobotics/unitree_ros2) for detailed installation instructions
-
-    ```bash
-    pip install numpy scipy joblib
-    ```
-- For Realman robots, we need:
-
-  ```bash
-  pip install Robotic_Arm_Custom
-  pip install numpy matplotlib h5py joblib scipy pandas
-  ```
-
-Unified script is used for real robots:
+Use the unified script to collect motion data on real robots:
 
 ```bash
 python scripts/run_real.py \
-    --robot-name g1 \
-    --motion-files 'path/to/motion.txt'\
-    --output-folder 'path/to/output'
+    --robot-name {g1|h12|realman} \
+    --motion-files 'path/to/your/motion_sequence.txt' \
+    --output-folder 'path/to/your/output_folder'
 ```
 
-Both **Unitree G1 and H1-2** have been tested. Also, **Realman WR75S** has been tested. Detailed guidelines can be found in [UNITREE_REAL](docs/UNITREE_REAL.md) and [REALMAN_REAL](docs/REALMAN_REAL.md).
+For detailed setup instructions, usage examples, and robot-specific configurations, refer to:
 
+- [UNITREE_REAL](docs/UNITREE_REAL.md) - Unitree G1 and H1-2 guide
+- [REALMAN_REAL](docs/REALMAN_REAL.md) - Realman WR75S guide
 
 ## Data Format
 

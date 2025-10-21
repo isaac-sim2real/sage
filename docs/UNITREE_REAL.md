@@ -27,24 +27,20 @@ This project provides tools for collecting and processing motion data from Unitr
 
 For G1 robot:
 ```bash
-python hardware_data_collect.py --robot-name g1 --motion-file motion_files/g1/xxx.pkl --output-dir ./output
+python scripts/run_real.py \
+    --robot-name g1 \
+    --motion-files 'path/to/motion.txt'\
+    --output-folder 'path/to/output'
 ```
 
 For H1-2 robot:
 ```bash
-python hardware_data_collect.py --robot-name h12 --motion-file motion_files/h1_2/xxx.pkl --output-dir ./output
+python scripts/run_real.py \
+    --robot-name h12 \
+    --motion-files 'path/to/motion.txt'\
+    --output-folder 'path/to/output'
 ```
 
-Or use the main function:
-```python
-from hardware_data_collect import unitree_robot_main
-
-unitree_robot_main(
-    robot_name='g1',  # or 'h12'
-    motion_file='path/to/motion',
-    output_dir='./output'
-)
-```
 
 ## Input Format
 

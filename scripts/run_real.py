@@ -1,8 +1,8 @@
 import argparse
 import os
 
-from joint_motion_gap.real_realman import realman_collector_main
-from joint_motion_gap.real_unitree.hardware_data_collect import unitree_robot_main
+from sage.real_realman import realman_collector_main
+from sage.real_unitree import unitree_robot_main
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

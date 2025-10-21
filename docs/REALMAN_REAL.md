@@ -20,18 +20,10 @@ This project provides tools for collecting and processing motion data from Realm
 ### Execute Motion and Collect Data
 
 ```bash
-python real_realman.py
-```
-
-Or use the main function:
-
-```python
-from real_realman import real_realman_main
-
-real_realman_main(
-    txt_file_path='path/to/motion.txt',
-    save_data_path='path/to/output'
-)
+python scripts/run_real.py \
+    --robot-name realman \
+    --motion-files 'path/to/motion.txt'\
+    --output-folder 'path/to/output'
 ```
 
 ## Input Format
