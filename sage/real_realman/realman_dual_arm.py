@@ -6,11 +6,17 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-# flake8: noqa: F405
+
 import time
 
 import numpy as np
-from Robotic_Arm.rm_robot_interface import *  # noqa: F403
+from Robotic_Arm.rm_robot_interface import (
+    RoboticArm,
+    rm_realtime_arm_state_callback_ptr,
+    rm_realtime_push_config_t,
+    rm_thread_mode_e,
+    rm_udp_custom_config_t,
+)
 
 
 class HumanoidDualArmCollector:
@@ -108,7 +114,7 @@ class HumanoidDualArmCollector:
         print(self.arm1.rm_set_realtime_push(config1))
         print(self.arm1.rm_get_realtime_push())
 
-        # 配置 arm2
+        # arm2
         self.custom2 = rm_udp_custom_config_t()
         self.custom2.joint_speed = 1
         self.custom2.lift_state = 0

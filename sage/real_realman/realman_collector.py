@@ -6,7 +6,7 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-# collect_motion_data_from_txt.py
+
 import csv
 import os
 import time

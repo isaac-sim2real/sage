@@ -6,10 +6,6 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-"""
-Multi-Robot Motion Data Collection Pipeline
-Supports both G1 and H1-2 robots with unified motion playback system
-"""
 
 import csv
 import os
