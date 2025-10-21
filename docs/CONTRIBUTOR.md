@@ -42,6 +42,10 @@ Vikas Sharma, Product Manager
 
 <img src="images/vikas_sharma.png" alt="Vikas Sharma" width="150"/>
 
+Spencer Huang, Product Manager
+
+<img src="images/spencer_huang.png" alt="Spencer Huang" width="150"/>
+
 ## PKU
 
 Zhenghao Qi, Prospective PhD, PKU Institute for Artificial Intelligence; Undergraduate in Department of Automation, Tsinghua University
