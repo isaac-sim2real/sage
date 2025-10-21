@@ -1,8 +1,16 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
 import argparse
 import os
 
 from sage.real_realman import realman_collector_main
-from sage.real_unitree import unitree_robot_main
+from sage.real_unitree import unitree_collector_main
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -18,6 +26,6 @@ if __name__ == "__main__":
     motion_file = os.path.join(home_dir, "motion_files", args.robot_name, "amass", args.motion_files)
 
     if args.robot_name == "h12" or args.robot_name == "g1":
-        unitree_robot_main(args.robot_name, motion_file, output_dir)
+        unitree_collector_main(args.robot_name, motion_file, output_dir)
     elif args.robot_name == "realman":
         realman_collector_main(motion_file, output_dir)

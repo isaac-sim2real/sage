@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# NVIDIA CORPORATION and its licensors retain all intellectual property
+# and proprietary rights in and to this software, related documentation
+# and any modifications thereto.  Any use, reproduction, disclosure or
+# distribution of this software and related documentation without an express
+# license agreement from NVIDIA CORPORATION is strictly prohibited.
+
 """
 Multi-Robot Motion Data Collection Pipeline
 Supports both G1 and H1-2 robots with unified motion playback system
@@ -890,7 +897,7 @@ class MultiRobotMotionControlNode(Node):
             time.sleep(1.0 / self.robot_config.control_frequency)
 
 
-def unitree_robot_main(robot_name, motion_file, output_dir):
+def unitree_collector_main(robot_name, motion_file, output_dir):
     """Main entry point"""
 
     # Get robot configuration
