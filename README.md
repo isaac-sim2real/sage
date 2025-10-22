@@ -201,7 +201,7 @@ After collecting both simulation and real robot data pairs, we process them into
 
 | Robot Name    | Dataset Link                                                                |
 | ------------- | --------------------------------------------------------------------------- |
-| unitree_h1_2  | [Unitree H1-2 Sim2Real Dataset](https://example.com/unitree_h1_2_dataset)   |
+| unitree_h1_2  | [Unitree H1-2 Sim2Real Dataset](https://disk.pku.edu.cn/link/AAD9CC24070F2240F5A59409236D97B18E)   |
 | realman_wr75s | [Realman WR75S Sim2Real Dataset](https://example.com/realman_wr75s_dataset) |
 
 ## Adding New Humanoids
@@ -241,6 +241,24 @@ This section gives a general idea to add simulation support for a new humanoid. 
 - Ensure joint names match both USD asset and motion files
 
 ### Real Robot Integration
+
+This section provides methods for extending our current real data collection pipeline to new robots. To facilitate usage across more robot models, we built the current transmission pipeline using ROS.
+
+**1. Identify Your IP and Port**
+
+- Place the ROS transmission files that exactly match your robot under the path `sage/Your_robot`
+- Ensure the IP and message types are completely correct, and test them by creating nodes
+
+**2. Build New Config**
+
+- Refer to `sage/real_unitree/unitree_configs.py` to organize the required structure for the new robot model
+- Be sure to confirm that the p_gains & d_gains for each joint are compatible with the physical robot, as they significantly impact data collection quality
+- Place the new config under the path `sage/Your_robot`
+
+**3. Update Main File**
+
+- After completing the above tasks, navigate to `scripts/run_real.py` and update the relevant paths and tasks for your robot in the corresponding functions
+
 
 **Status:** TBD (To Be Determined)
 
