@@ -2,8 +2,8 @@
 
 <div align="center">
 
-[![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.1.0-b.svg)](https://isaac-sim.github.io/IsaacLab/v2.1.0/index.html)
-[![IsaacSim](https://img.shields.io/badge/IsaacSim-4.5.0-b.svg)](https://docs.isaacsim.omniverse.nvidia.com/4.5.0/index.html)
+[![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.2.0-b.svg)](https://isaac-sim.github.io/IsaacLab/v2.2.0/index.html)
+[![IsaacSim](https://img.shields.io/badge/IsaacSim-5.0.0-b.svg)](https://docs.isaacsim.omniverse.nvidia.com/5.0.0/index.html)
 [![Linux platform](https://img.shields.io/badge/Platform-linux--64-orange.svg)](https://ubuntu.com/blog/tag/22-04-lts)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
@@ -56,7 +56,8 @@ SAGE combines:
 - Ubuntu 22.04 LTS
 - Python 3.10
 - NVIDIA GPU with compatible drivers
-- Isaac Sim 4.5.0
+- Isaac Sim 5.0.0
+- Isaac Lab 2.2.0
 
 ### Isaac Lab Setup
 
