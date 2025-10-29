@@ -5,17 +5,27 @@
 # and any modifications thereto.  Any use, reproduction, disclosure or
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
-
-
-"""
-Robot Configuration System
-Supports both G1 and H1-2 robots with different parameters
-"""
-
 from dataclasses import dataclass
-
 import numpy as np
+"""
+Joint order follows the URDF exactly.
 
+Below are the explicit URDF joint orders used by each robot:
+
+- G1 (29 DOF):
+  left_hip_yaw_joint, left_hip_pitch_joint, left_hip_roll_joint, left_knee_joint, left_ankle_pitch_joint, left_ankle_roll_joint,
+  right_hip_yaw_joint, right_hip_pitch_joint, right_hip_roll_joint, right_knee_joint, right_ankle_pitch_joint, right_ankle_roll_joint,
+  torso_joint, neck_yaw_joint, neck_pitch_joint,
+  left_shoulder_pitch_joint, left_shoulder_roll_joint, left_shoulder_yaw_joint, left_elbow_joint, left_wrist_roll_joint, left_wrist_pitch_joint, left_wrist_yaw_joint,
+  right_shoulder_pitch_joint, right_shoulder_roll_joint, right_shoulder_yaw_joint, right_elbow_joint, right_wrist_roll_joint, right_wrist_pitch_joint, right_wrist_yaw_joint
+
+- H1-2 (27 DOF):
+  left_hip_yaw_joint, left_hip_pitch_joint, left_hip_roll_joint, left_knee_joint, left_ankle_pitch_joint, left_ankle_roll_joint,
+  right_hip_yaw_joint, right_hip_pitch_joint, right_hip_roll_joint, right_knee_joint, right_ankle_pitch_joint, right_ankle_roll_joint,
+  torso_joint,
+  left_shoulder_pitch_joint, left_shoulder_roll_joint, left_shoulder_yaw_joint, left_elbow_joint, left_wrist_roll_joint, left_wrist_pitch_joint, left_wrist_yaw_joint,
+  right_shoulder_pitch_joint, right_shoulder_roll_joint, right_shoulder_yaw_joint, right_elbow_joint, right_wrist_roll_joint, right_wrist_pitch_joint, right_wrist_yaw_joint
+"""
 
 @dataclass
 class RobotConfig:
@@ -199,21 +209,21 @@ G1_CONFIG = RobotConfig(
     # Default positions for G1
     default_dof_pos=np.array(
         [
-            -0.2,  # left hip pitch
-            0.0,  # left hip roll
-            0.0,  # left hip pitch
-            0.4,  # left knee
-            -0.2,  # left ankle pitch
-            0,  # left ankle roll
-            -0.2,  # right hip pitch
-            0.0,  # right hip roll
-            0.0,  # right hip pitch
-            0.4,  # right knee
-            -0.2,  # right ankle pitch
-            0,  # right ankle roll
-            0,  # waist
-            0,  # waist
-            0,  # 0.12, #waist
+            -0.2,
+            0.0,
+            0.0,
+            0.4,
+            -0.2,
+            0.0,
+            -0.2,
+            0.0,
+            0.0,
+            0.4,
+            -0.2,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
             0.0,
             0.0,
             0.0,
@@ -230,16 +240,13 @@ G1_CONFIG = RobotConfig(
             0.0,
         ]
     ),
-    # Observation scales
     scale_lin_vel=2.0,
     scale_ang_vel=0.25,
     scale_orn=1.0,
     scale_dof_pos=1.0,
     scale_dof_vel=0.05,
     scale_action=0.25,
-    # Control frequency
     control_frequency=50,
-    # Motion file path
     motion_file_path="g1_amass_test.pkl",
 )
 
@@ -259,28 +266,28 @@ H12_CONFIG = RobotConfig(
             200.0,
             300.0,
             40.0,
-            40.0,  # Left leg
+            40.0,
             300.0,
             200.0,
             200.0,
             300.0,
             40.0,
-            40.0,  # Right leg
-            300.0,  # Waist
+            40.0,
+            300.0,
             200.0,
             200.0,
             200.0,
             100.0,
             20.0,
             20.0,
-            20.0,  # Left arm
+            20.0,
             200.0,
             200.0,
             200.0,
             100.0,
             20.0,
             20.0,
-            20.0,  # Right arm
+            20.0,
         ]
     ),
     d_gains=np.array(
@@ -290,28 +297,28 @@ H12_CONFIG = RobotConfig(
             2.5,
             4.0,
             2.0,
-            2.0,  # Left leg
+            2.0,
             3.0,
             2.5,
             2.5,
             4.0,
             2.0,
-            2.0,  # Right leg
-            5.0,  # Waist
+            2.0,
+            5.0,
             4.0,
             4.0,
             4.0,
             1.0,
             0.5,
             0.5,
-            0.5,  # Left arm
+            0.5,
             4.0,
             4.0,
             4.0,
             1.0,
             0.5,
             0.5,
-            0.5,  # Right arm
+            0.5,
         ]
     ),
     # Joint limits for H1-2
@@ -322,28 +329,28 @@ H12_CONFIG = RobotConfig(
             -0.43,
             -0.26,
             -np.inf,
-            -np.inf,  # Left leg
+            -np.inf,
             -0.43,
             -3.14,
             -3.14,
             -0.24,
             -np.inf,
-            -np.inf,  # Right leg
-            -2.618,  # Waist
+            -np.inf,
+            -2.618,
             -3.0892,
             -1.5882,
             -2.618,
             -1.0472,
             -1.972222054,
             -1.614429558,
-            -1.614429558,  # Left arm
+            -1.614429558,
             -3.0892,
             -2.2515,
             -2.618,
             -1.0472,
             -1.972222054,
             -1.614429558,
-            -1.614429558,  # Right arm
+            -1.614429558,
         ]
     ),
     joint_limit_hi=np.array(
@@ -353,28 +360,28 @@ H12_CONFIG = RobotConfig(
             3.14,
             2.05,
             np.inf,
-            np.inf,  # Left leg
+            np.inf,
             0.43,
             2.5,
             0.43,
             2.0,
             np.inf,
-            np.inf,  # Right leg
-            2.618,  # Waist
+            np.inf,
+            2.618,
             2.6704,
             2.2515,
             2.618,
             2.0944,
             1.972222054,
             1.614429558,
-            1.614429558,  # Left arm
+            1.614429558,
             2.6704,
             1.5882,
             2.618,
             2.0944,
             1.972222054,
             1.614429558,
-            1.614429558,  # Right arm
+            1.614429558,
         ]
     ),
     # Default positions for H1-2
@@ -385,40 +392,37 @@ H12_CONFIG = RobotConfig(
             0.0,
             0.36,
             -0.2,
-            0,  # Left leg
+            0.0,
             0.0,
             -0.16,
             0.0,
             0.36,
             -0.2,
-            0,  # Right leg
-            0,  # Waist
             0.0,
-            0,
-            0,
             0.0,
-            0,
-            0,
-            0,  # Left arm
             0.0,
-            0,
-            0,
             0.0,
-            0,
-            0,
-            0,  # Right arm
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
         ]
     ),
-    # Observation scales
     scale_lin_vel=2.0,
     scale_ang_vel=0.25,
     scale_orn=1.0,
     scale_dof_pos=1.0,
     scale_dof_vel=0.05,
     scale_action=0.25,
-    # Control frequency
     control_frequency=50,
-    # Motion file path
     motion_file_path="h12_amass_test.pkl",
 )
 
@@ -429,13 +433,10 @@ ROBOT_CONFIGS = {"g1": G1_CONFIG, "h12": H12_CONFIG}
 def get_robot_config(robot_name: str) -> RobotConfig:
     """
     Get robot configuration by name
-
     Args:
         robot_name: Name of the robot (g1 or h12)
-
     Returns:
         RobotConfig: Robot configuration object
-
     Raises:
         ValueError: If robot name is not supported
     """

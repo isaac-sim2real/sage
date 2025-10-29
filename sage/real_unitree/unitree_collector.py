@@ -372,43 +372,6 @@ class UpperBodyController:
         return self.default_positions
 
 
-class RobotConfig:
-    """Robot configuration container"""
-
-    def __init__(self, config):
-        self.name = config.name
-        self.hw_dof = config.hw_dof
-        self.num_actions = config.num_actions
-        self.num_upper_body_joints = config.num_upper_body_joints
-        self.leg_joints = config.leg_joints
-        self.upper_body_joints = config.upper_body_joints
-
-        # PD gains
-        self.p_gains = config.p_gains
-        self.d_gains = config.d_gains
-
-        # Joint limits
-        self.joint_limit_lo = config.joint_limit_lo
-        self.joint_limit_hi = config.joint_limit_hi
-
-        # Default positions
-        self.default_dof_pos = config.default_dof_pos
-
-        # Observation scales
-        self.scale_lin_vel = config.scale_lin_vel
-        self.scale_ang_vel = config.scale_ang_vel
-        self.scale_orn = config.scale_orn
-        self.scale_dof_pos = config.scale_dof_pos
-        self.scale_dof_vel = config.scale_dof_vel
-        self.scale_action = config.scale_action
-
-        # Control frequency
-        self.control_frequency = config.control_frequency
-
-        # Motion file path
-        self.motion_file_path = config.motion_file_path
-
-
 class MultiRobotMotionControlNode(Node):
     """Main ROS2 node for multi-robot motion control"""
 
