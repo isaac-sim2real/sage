@@ -132,7 +132,6 @@ class RobotDataProcessor:
 
             key_df = pd.DataFrame(index=df.index)
             for i, j in enumerate(joint_list):
-
                 if not is_rad and k in ["positions", "velocities"]:
                     key_df[f"{k}_{j}"] = df_copy[k].apply(lambda x: self._safe_deg2rad(x, i))
                 else:
@@ -191,7 +190,6 @@ class RobotDataComparator:
 
         self._motion_data = {}
         for i, motion_name in enumerate(self._motion_names):
-
             # Create sim and real data processors
             sim_data = RobotDataProcessor(
                 self._robot_name,
@@ -831,7 +829,6 @@ class RobotDataComparator:
         with pd.ExcelWriter(
             metrics_summary_filepath, engine="xlsxwriter", engine_kwargs={"options": {"nan_inf_to_errors": True}}
         ) as writer:
-
             # Add sheets for each data type and metric
             for data_type in data_types:
                 # Add comparison metrics with _sim_real suffix
