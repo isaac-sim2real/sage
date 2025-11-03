@@ -6,26 +6,9 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 from dataclasses import dataclass
+
 import numpy as np
-"""
-Joint order follows the URDF exactly.
 
-Below are the explicit URDF joint orders used by each robot:
-
-- G1 (29 DOF):
-  left_hip_yaw_joint, left_hip_pitch_joint, left_hip_roll_joint, left_knee_joint, left_ankle_pitch_joint, left_ankle_roll_joint,
-  right_hip_yaw_joint, right_hip_pitch_joint, right_hip_roll_joint, right_knee_joint, right_ankle_pitch_joint, right_ankle_roll_joint,
-  torso_joint, neck_yaw_joint, neck_pitch_joint,
-  left_shoulder_pitch_joint, left_shoulder_roll_joint, left_shoulder_yaw_joint, left_elbow_joint, left_wrist_roll_joint, left_wrist_pitch_joint, left_wrist_yaw_joint,
-  right_shoulder_pitch_joint, right_shoulder_roll_joint, right_shoulder_yaw_joint, right_elbow_joint, right_wrist_roll_joint, right_wrist_pitch_joint, right_wrist_yaw_joint
-
-- H1-2 (27 DOF):
-  left_hip_yaw_joint, left_hip_pitch_joint, left_hip_roll_joint, left_knee_joint, left_ankle_pitch_joint, left_ankle_roll_joint,
-  right_hip_yaw_joint, right_hip_pitch_joint, right_hip_roll_joint, right_knee_joint, right_ankle_pitch_joint, right_ankle_roll_joint,
-  torso_joint,
-  left_shoulder_pitch_joint, left_shoulder_roll_joint, left_shoulder_yaw_joint, left_elbow_joint, left_wrist_roll_joint, left_wrist_pitch_joint, left_wrist_yaw_joint,
-  right_shoulder_pitch_joint, right_shoulder_roll_joint, right_shoulder_yaw_joint, right_elbow_joint, right_wrist_roll_joint, right_wrist_pitch_joint, right_wrist_yaw_joint
-"""
 
 @dataclass
 class RobotConfig:
@@ -37,6 +20,7 @@ class RobotConfig:
     num_upper_body_joints: int
     leg_joints: list
     upper_body_joints: list
+    joint_names: list
 
     # PD gains
     p_gains: np.ndarray
@@ -72,6 +56,37 @@ G1_CONFIG = RobotConfig(
     num_upper_body_joints=19,
     leg_joints=list(range(12)),
     upper_body_joints=list(range(12, 29)),
+    joint_names=[
+        "left_hip_yaw_joint",
+        "left_hip_pitch_joint",
+        "left_hip_roll_joint",
+        "left_knee_joint",
+        "left_ankle_pitch_joint",
+        "left_ankle_roll_joint",
+        "right_hip_yaw_joint",
+        "right_hip_pitch_joint",
+        "right_hip_roll_joint",
+        "right_knee_joint",
+        "right_ankle_pitch_joint",
+        "right_ankle_roll_joint",
+        "torso_joint",
+        "neck_yaw_joint",
+        "neck_pitch_joint",
+        "left_shoulder_pitch_joint",
+        "left_shoulder_roll_joint",
+        "left_shoulder_yaw_joint",
+        "left_elbow_joint",
+        "left_wrist_roll_joint",
+        "left_wrist_pitch_joint",
+        "left_wrist_yaw_joint",
+        "right_shoulder_pitch_joint",
+        "right_shoulder_roll_joint",
+        "right_shoulder_yaw_joint",
+        "right_elbow_joint",
+        "right_wrist_roll_joint",
+        "right_wrist_pitch_joint",
+        "right_wrist_yaw_joint",
+    ],
     # PD gains for G1
     p_gains=np.array(
         [
@@ -258,6 +273,35 @@ H12_CONFIG = RobotConfig(
     num_upper_body_joints=15,
     leg_joints=list(range(12)),
     upper_body_joints=list(range(12, 27)),
+    joint_names=[
+        "left_hip_yaw_joint",
+        "left_hip_pitch_joint",
+        "left_hip_roll_joint",
+        "left_knee_joint",
+        "left_ankle_pitch_joint",
+        "left_ankle_roll_joint",
+        "right_hip_yaw_joint",
+        "right_hip_pitch_joint",
+        "right_hip_roll_joint",
+        "right_knee_joint",
+        "right_ankle_pitch_joint",
+        "right_ankle_roll_joint",
+        "torso_joint",
+        "left_shoulder_pitch_joint",
+        "left_shoulder_roll_joint",
+        "left_shoulder_yaw_joint",
+        "left_elbow_joint",
+        "left_wrist_roll_joint",
+        "left_wrist_pitch_joint",
+        "left_wrist_yaw_joint",
+        "right_shoulder_pitch_joint",
+        "right_shoulder_roll_joint",
+        "right_shoulder_yaw_joint",
+        "right_elbow_joint",
+        "right_wrist_roll_joint",
+        "right_wrist_pitch_joint",
+        "right_wrist_yaw_joint",
+    ],
     # PD gains for H1-2
     p_gains=np.array(
         [
