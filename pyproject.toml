@@ -25,28 +25,20 @@ dependencies = [
 [tool.setuptools]
 packages = ["sage"]
 
-# Code formatting with Black
-[tool.black]
+[tool.ruff]
 line-length = 120
-target-version = ["py310"]
+target-version = "py310"
 
-# Import sorting with isort (simplified from benchmark-joint-motion)
-[tool.isort]
-py_version = 310
-line_length = 120
-group_by_package = true
-profile = "black"
-
-sections = [
-    "FUTURE",
-    "STDLIB",
-    "THIRDPARTY",
-    "FIRSTPARTY",
-    "LOCALFOLDER",
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
 ]
 
-# Isaac Sim and Omniverse imports
-known_third_party = [
+[tool.ruff.lint.isort]
+known-third-party = [
     "isaacsim.core.api",
     "omni.replicator.core",
     "pxr",
@@ -55,7 +47,6 @@ known_third_party = [
     "carb",
 ]
 
-# Linting with flake8
-[tool.flake8]
-max-line-length = 120
-extend-ignore = ["E203", "W503"]
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
