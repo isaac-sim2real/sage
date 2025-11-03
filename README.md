@@ -32,7 +32,7 @@ SAGE combines:
 - [Usage](#usage)
   - [Simulation Execution](#simulation-execution)
   - [Data Analysis](#data-analysis)
-  - [Real Robot Integration (Coming Soon)](#real-robot-integration-coming-soon)
+  - [Real Robot Integration](#real-robot-integration)
 - [Data Format](#data-format)
   - [Motion Files](#motion-files)
   - [Simulation Output](#simulation-output)
@@ -123,15 +123,28 @@ python scripts/run_analysis.py \
 - **Visualization plots** for individual joint comparisons (position, velocity, torque)
 - **Statistical boxplots** comparing simulation vs real robot performance
 
-### Real Robot Integration (Coming Soon)
+### Real Robot Integration
+
+**Different robot manufacturers provide different control APIs and dependencies.** For example, Unitree robots require ROS2 and Unitree SDK, while Realman robots require their proprietary `Robotic_Arm_Custom package`. See the robot-specific documentation below for detailed installation instructions.
+
+**Supported robots:**
+
+- **Unitree G1** and **H1-2** humanoid robots
+- **Realman WR75S** dual-arm robot
+
+Use the unified script to collect motion data on real robots:
 
 ```bash
-# Placeholder for future real robot execution
 python scripts/run_real.py \
-    --robot-name h1_2 \
-    --motion-files motion_files/h1_2/amass \
-    --output-folder output
+    --robot-name {g1|h12|realman} \
+    --motion-files 'path/to/your/motion_sequence.txt' \
+    --output-folder 'path/to/your/output_folder'
 ```
+
+For detailed setup instructions, usage examples, and robot-specific configurations, refer to:
+
+- [UNITREE_REAL](docs/UNITREE_REAL.md) - Unitree G1 and H1-2 guide
+- [REALMAN_REAL](docs/REALMAN_REAL.md) - Realman WR75S guide
 
 ## Data Format
 
@@ -184,12 +197,20 @@ Generated in `output/real/{robot_name}/{source}/{motion_name}/`:
 
 After collecting both simulation and real robot data pairs, we process them into structured datasets suitable for training sim2real gap compensation models. These datasets align temporal sequences and provide paired observations for machine learning approaches.
 
-**Available Processed Datasets:**
+The complete dataset containing both Unitree and RealMan robot data is available for download: [PKU Disk Link](https://disk.pku.edu.cn/link/AA479C804E805D4B26B5E5C544A6EE57F8).
 
-| Robot Name    | Dataset Link                                                                |
-| ------------- | --------------------------------------------------------------------------- |
-| unitree_h1_2  | [Unitree H1-2 Sim2Real Dataset](https://example.com/unitree_h1_2_dataset)   |
-| realman_wr75s | [Realman WR75S Sim2Real Dataset](https://example.com/realman_wr75s_dataset) |
+#### Unitree Dataset
+
+This dataset captures complex upper-body motions of the H1-2 humanoid robot under varying payload conditions (0 kg, 1 kg, 2 kg, and 3 kg). The motions are adapted from the open-source AMASS dataset and carefully post-processed to ensure reliable execution on the real robot. Each trajectory includes corresponding simulation replays, providing paired sim-real data for gap analysis and compensation model training.
+
+**Data Variants:**
+- **Standard split**: Training and test sets with upper-body motions (`train.npz`, `test.npz`)
+- **Gait variations**: Upper-body motions paired with different lower-body gaits (locomotion, squatting, upper-only) to enhance data diversity
+- **Whole-body extension**: A subset featuring full-body coordinated motions for comprehensive sim2real research
+
+#### RealMan Dataset
+
+This dataset contains data collected from four Realman WR75S robotic arms (`robot1-4`), each tested under four payload conditions (0-3 kg). The multi-robot, multi-payload structure enables cross-robot generalization studies and payload adaptation analysis.
 
 ## Adding New Humanoids
 
@@ -229,9 +250,22 @@ This section gives a general idea to add simulation support for a new humanoid. 
 
 ### Real Robot Integration
 
-**Status:** TBD (To Be Determined)
+This section provides methods for extending our current real data collection pipeline to new robots. To facilitate usage across more robot models, we built the current transmission pipeline using ROS.
 
-Real robot integration steps will be documented as the framework evolves to support additional robots.
+**1. Identify Your IP and Port**
+
+- Place the ROS transmission files that exactly match your robot under the path `sage/Your_robot`
+- Ensure the IP and message types are completely correct, and test them by creating nodes
+
+**2. Build New Config**
+
+- Refer to `sage/real_unitree/unitree_configs.py` to organize the required structure for the new robot model
+- Be sure to confirm that the p_gains & d_gains for each joint are compatible with the physical robot, as they significantly impact data collection quality
+- Place the new config under the path `sage/Your_robot`
+
+**3. Update Main File**
+
+- After completing the above tasks, navigate to `scripts/run_real.py` and update the relevant paths and tasks for your robot in the corresponding functions
 
 ## Configuration
 
