@@ -197,46 +197,20 @@ Generated in `output/real/{robot_name}/{source}/{motion_name}/`:
 
 After collecting both simulation and real robot data pairs, we process them into structured datasets suitable for training sim2real gap compensation models. These datasets align temporal sequences and provide paired observations for machine learning approaches.
 
-**Available Processed Datasets:**
+The complete dataset containing both Unitree and RealMan robot data is available for download: [PKU Disk Link](https://disk.pku.edu.cn/link/AA479C804E805D4B26B5E5C544A6EE57F8).
+
 #### Unitree Dataset
 
-[Train & Test data] This dataset captures complex upper-body motions of the H1-2 humanoid robot under varying payloads (0 kg, 1 kg, 2 kg, and 3 kg). The motions are adapted from the open-source AMASS dataset and carefully post-processed to ensure reliable execution on the real robot. In addition, we provide replay versions of the same trajectories in simulation, establishing a solid foundation for future sim-to-real research on the H1-2 platform.
+This dataset captures complex upper-body motions of the H1-2 humanoid robot under varying payload conditions (0 kg, 1 kg, 2 kg, and 3 kg). The motions are adapted from the open-source AMASS dataset and carefully post-processed to ensure reliable execution on the real robot. Each trajectory includes corresponding simulation replays, providing paired sim-real data for gap analysis and compensation model training.
 
-[Subset of upper body data with different gaits]
-We also apply different lower-body gaits to ensure the diversity and validity of our data collection
-
-[Whole body subset]
-We are planning to expand our data collection from upper-body to whole-body, here is the subset of our whole-body dataset. 
+**Data Variants:**
+- **Standard split**: Training and test sets with upper-body motions (`train.npz`, `test.npz`)
+- **Gait variations**: Upper-body motions paired with different lower-body gaits (locomotion, squatting, upper-only) to enhance data diversity
+- **Whole-body extension**: A subset featuring full-body coordinated motions for comprehensive sim2real research
 
 #### RealMan Dataset
-This project contains data collected from the Realman WR75S robot. The data is organized for four robots (`robot1`, `robot2`, `robot3`, `robot4`), and each robot directory contains four datasets with different counterweights (`robotx_ykg`, where `x` is 1-4 for the robot number, and `y` is 0-3 for the counterweight type).
 
-```
-  ├── Data subset
-    ├── unitree
-      ├── different gaits
-        ├── data_output_loco
-        ├── data_output_squat
-        ├── data_output_upperonly
-      ├── whole body subset
-      ├── train.npz
-      └── test.npz
-    ├── realman
-      ├── plot_from_hdf5.py
-      ├── robot1/
-      │   ├── robot1_0kg/
-      │   ├── robot1_1kg/
-      │   ├── robot1_2kg/
-      │   └── robot1_3kg/
-      ├── robot2/
-      │   └── ... (same as robot1)
-      ├── robot3/
-      │   └── ... (same as robot1)
-      ├── robot4/
-      │   └── ... (same as robot1)
-```
-
-[Data Link](https://disk.pku.edu.cn/link/AA479C804E805D4B26B5E5C544A6EE57F8)
+This dataset contains data collected from four Realman WR75S robotic arms (`robot1-4`), each tested under four payload conditions (0-3 kg). The multi-robot, multi-payload structure enables cross-robot generalization studies and payload adaptation analysis.
 
 ## Adding New Humanoids
 
@@ -292,11 +266,6 @@ This section provides methods for extending our current real data collection pip
 **3. Update Main File**
 
 - After completing the above tasks, navigate to `scripts/run_real.py` and update the relevant paths and tasks for your robot in the corresponding functions
-
-
-**Status:** TBD (To Be Determined)
-
-Real robot integration steps will be documented as the framework evolves to support additional robots.
 
 ## Configuration
 
