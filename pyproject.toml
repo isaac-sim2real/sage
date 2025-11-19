@@ -22,6 +22,11 @@ dependencies = [
     "pyyaml",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=4.4.0",
+]
+
 [tool.setuptools]
 packages = ["sage"]
 
