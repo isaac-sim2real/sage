@@ -7,27 +7,16 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 import csv
-import ctypes
 import os
 from datetime import datetime
 from pathlib import Path
 
-import cv2
-import numpy as np
-import omni
-from scipy.interpolate import interp1d
+import isaaclab.sim as sim_utils
+import torch
+from isaaclab.assets import Articulation
+from isaaclab.sim import SimulationContext
 
-from .assets import get_robot_config
-
-# Isaac Sim modules - will be imported after SimulationApp initialization
-# These will be set as module-level variables by the calling script
-schemas = None
-World = None
-Articulation = None
-add_reference_to_stage = None
-create_new_stage = None
-capture_viewport_to_buffer = None
-create_prim = None
+from .assets import get_robot_cfg
 
 
 def get_motion_files(motion_files_arg):
@@ -75,14 +64,8 @@ class JointMotionBenchmark:
         self.render_freq = args.render_freq
         self.original_control_freq = args.original_control_freq
         self.solver_type = args.solver_type
-        self.record_video = args.record_video
-
-        self.robot_config = get_robot_config(self.robot_name)
-
-        # Resolve control parameters
-        self.control_freq = self._resolve_param(args.control_freq, "default_control_freq", "control-freq")
-        self.kp = self._resolve_param(args.kp, "default_kp", "kp")
-        self.kd = self._resolve_param(args.kd, "default_kd", "kd")
+        self.control_freq = args.control_freq
+        self.device = args.device
 
         # Check frequency divisibility
         if self.physics_freq % self.render_freq != 0:
@@ -96,10 +79,6 @@ class JointMotionBenchmark:
         self.control_dt = 1.0 / self.control_freq
         self.divisor = self.render_freq // self.control_freq
 
-        # Initialize video recording components as None
-        self.viewport_api = None
-        self.video_writer = None
-
         # Load valid joint names from config file
         self.set_valid_joints = False
         self.valid_joint_names = []
@@ -107,17 +86,6 @@ class JointMotionBenchmark:
 
         # Initialize simulation environment
         self._setup_simulation()
-
-    def _resolve_param(self, arg_value, config_key, param_name):
-        """Resolve parameter with priority: args > robot_config, error if both not set"""
-        config_value = self.robot_config.get_config_value(config_key, None)
-
-        if arg_value is not None:
-            return arg_value
-        elif config_value is not None:
-            return config_value
-        else:
-            raise ValueError(f"No {param_name} configured for robot {self.robot_name}.")
 
     def _load_valid_joints(self):
         """Load valid joint names from valid_joints_file"""
@@ -139,52 +107,45 @@ class JointMotionBenchmark:
 
     def _setup_simulation(self):
         """Set up the simulation environment."""
-        # Get robot configuration from assets
-        self.prim_path = self.robot_config.prim_path
-        self.robot_usd_path = self.robot_config.usd_path
-        self.robot_offset = self.robot_config.offset
-
-        # Create and configure stage
-        create_new_stage()
-        stage = omni.usd.get_context().get_stage()
-
-        # 4. Simulation config
-        sim_params = {
-            "gravity": [0, 0, -9.81],
-            "solver_type": self.solver_type,
-        }
-
-        # Initialize world with physics configuration
-        self.world = World(
-            physics_dt=self.physics_dt, rendering_dt=self.render_dt, stage_units_in_meters=1.0, sim_params=sim_params
+        # Create simulation context
+        sim_cfg = sim_utils.SimulationCfg(
+            dt=self.physics_dt,
+            render_interval=int(self.render_dt / self.physics_dt),
+            device=self.device,
+            physx=sim_utils.PhysxCfg(
+                solver_type=self.solver_type,
+            ),
         )
+        self.sim = SimulationContext(sim_cfg)
 
-        # Add default ground plane
-        self.world.scene.add_default_ground_plane()
+        # Get device from simulation context
+        self.device = self.sim.device
 
-        # Load robot USD with offset
-        create_prim(
-            prim_path=self.prim_path, prim_type="Xform", usd_path=self.robot_usd_path, translation=self.robot_offset
-        )
-        log_message(f"Loaded robot {self.robot_name} from {self.robot_usd_path} with offset {self.robot_offset}")
+        # Ground-plane
+        ground_cfg = sim_utils.GroundPlaneCfg()
+        ground_cfg.func("/World/defaultGroundPlane", ground_cfg)
 
-        # Configure robot articulation view
-        self.robot = Articulation(prim_paths_expr=self.prim_path, name=self.robot_name)
-        self.world.scene.add(self.robot)
+        # Lights
+        light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
+        light_cfg.func("/World/Light", light_cfg)
 
-        # Configure articulation properties using robot-specific values
-        articulation_props = schemas.ArticulationRootPropertiesCfg(
-            enabled_self_collisions=self.robot_config.get_config_value("enabled_self_collisions", False),
-            solver_position_iteration_count=self.robot_config.get_config_value("solver_position_iterations", 4),
-            solver_velocity_iteration_count=self.robot_config.get_config_value("solver_velocity_iterations", 4),
-            fix_root_link=self.fix_root,
-        )
-        schemas.modify_articulation_root_properties(self.prim_path, articulation_props, stage)
+        # Get robot ArticulationCfg
+        robot_cfg = get_robot_cfg(self.robot_name).copy()
 
-        # Initialize physics simulation
-        self.world.reset()
-        for _ in range(5):
-            self.world.step(render=False)
+        # Set prim path
+        robot_cfg.prim_path = "/World/Robot"
+
+        # Overwrite fix root link if specified
+        if self.fix_root:
+            robot_cfg.spawn.articulation_props.fix_root_link = True
+
+        # Create robot articulation
+        self.robot = Articulation(cfg=robot_cfg)
+
+        # Reset simulation
+        self.sim.reset()
+
+        log_message(f"Loaded robot {self.robot_name}")
 
     def set_motion(self, motion_file, motion_name):
         """Set up for a new motion file."""
@@ -212,34 +173,13 @@ class JointMotionBenchmark:
         self.joint_indices = []
         for joint in self.joint_names:
             key = joint.split("/")[-1]
-            index = self.robot.get_dof_index(dof_name=key)
-            self.joint_indices.append(index)
-        self.joint_indices = np.array(self.joint_indices)
-
-        # Config joint controller and PD
-        self._config_controller()
+            if key in self.robot.data.joint_names:
+                index = self.robot.data.joint_names.index(key)
+                self.joint_indices.append(index)
+        self.joint_indices = torch.tensor(self.joint_indices, dtype=torch.long, device=self.device)
 
         # Initialize logging
         self._init_logger()
-
-    def _config_controller(self):
-        """Config joint mode and PD value"""
-        self.robot.set_effort_modes("force", joint_indices=self.joint_indices)
-        self.robot.switch_control_mode("position", joint_indices=self.joint_indices)
-
-        stiffnesses, dampings = self.robot.get_gains(joint_indices=self.joint_indices)
-        log_message(
-            f"PD before configuration. Total joints: {len(self.joint_names)}. Kp={stiffnesses[0][0]},"
-            f" Kd={dampings[0][0]}"
-        )
-
-        self.robot.set_gains(kps=self.kp, kds=self.kd, joint_indices=self.joint_indices)
-
-        stiffnesses, dampings = self.robot.get_gains(joint_indices=self.joint_indices)
-        log_message(
-            f"PD after configuration. Total joints configured: {len(self.joint_names)}. Kp={stiffnesses[0][0]},"
-            f" Kd={dampings[0][0]}"
-        )
 
     def _init_logger(self):
         """Initialize logger for joint motion benchmark"""
@@ -297,31 +237,27 @@ class JointMotionBenchmark:
                     if values[valid_idx]:  # Only convert non-empty strings
                         joint_angles[i].append(float(values[valid_idx]))
 
+        # Convert to tensor (num_valid_joints, num_timesteps)
+        joint_angles = torch.tensor(joint_angles, dtype=torch.float32, device=self.device)
+
         if self.original_control_freq is not None and self.original_control_freq != self.control_freq:
             log_message(f"Resampling motion from {self.original_control_freq}Hz to {self.control_freq}Hz")
-            joint_angles = np.array(joint_angles)
 
-            # Check original trajectory length and new length to match target control freq
-            old_len, num_joints = joint_angles.shape
+            # Calculate new length to match target control freq
+            old_len = joint_angles.shape[1]
             duration = old_len / self.original_control_freq
             new_len = int(round(duration * self.control_freq))
 
-            # Create linspace for resample
-            old_times = np.linspace(0, duration, old_len, endpoint=False)
-            new_times = np.linspace(0, duration, new_len, endpoint=False)
-            # Cap new time and fill with last value
-            new_times = new_times[new_times <= old_times[-1]]
-            new_times = np.append(new_times, old_times[-1])
-            new_len = len(new_times)
+            # Linear interpolation
+            # Reshape to (1, num_valid_joints, old_len)
+            joint_angles = joint_angles.unsqueeze(0)
+            joint_angles = torch.nn.functional.interpolate(
+                joint_angles, size=new_len, mode="linear", align_corners=True
+            )
+            # Back to (num_valid_joints, new_len)
+            joint_angles = joint_angles.squeeze(0)
 
-            # Resample
-            new_angles = np.zeros((new_len, num_joints), dtype=joint_angles.dtype)
-            for i in range(num_joints):
-                f = interp1d(old_times, joint_angles[:, i], kind="linear")
-                new_angles[:, i] = f(new_times)
-            joint_angles = new_angles.T.tolist()
-
-        return joint_angles, self.joint_names
+        return joint_angles
 
     def _log_state(self, time, command_positions, actual_positions, actual_velocities, actual_efforts):
         """Log current robot state"""
@@ -337,50 +273,26 @@ class JointMotionBenchmark:
                 ["STATE_MOTOR", time, actual_positions.tolist(), actual_velocities.tolist(), actual_efforts.tolist()]
             )
 
-    def _init_video_writer(self):
-        video_path = f"{self.sim_output_folder}/{self.motion_name}.avi"
-        log_message(f"Initializing video writer at: {video_path}")
-        viewport = omni.ui.Workspace.get_window("Viewport")
-        self.viewport_api = viewport.viewport_api
-        frame_width = self.viewport_api.resolution[0]
-        frame_height = self.viewport_api.resolution[1]
-        fourcc = cv2.VideoWriter_fourcc(*"XVID")
-        self.video_writer = cv2.VideoWriter(video_path, fourcc, 30.0, (frame_width, frame_height))
-
-    def _capture_video_fn(self, *args, **kwargs):
-        capsule, data_size, width, height = args[0], args[1], args[2], args[3]
-
-        ptr = ctypes.pythonapi.PyCapsule_GetPointer(capsule, None)
-        buffer = ctypes.string_at(ptr, data_size)
-
-        bytes_per_pixel = 4
-        raw_array = np.frombuffer(buffer, dtype=np.uint8)
-        image_array = raw_array.reshape((height, width, bytes_per_pixel))
-
-        rgb_image_array = image_array[:, :, :3]
-        rgb_image = cv2.cvtColor(rgb_image_array, cv2.COLOR_RGB2BGR)
-        self.video_writer.write(rgb_image)
-
     def run_benchmark(self):
         """Run the benchmark for the current motion file"""
         # Load motion data
         log_message(f"Loading motion data from {self.motion_file}...")
-        joint_angles, joint_names = self._load_motion()
+        joint_angles = self._load_motion()
+        num_timesteps = joint_angles.shape[1]
 
         log_message(f"Physics dt: {self.physics_dt}, Rendering dt: {self.physics_dt * self.divisor}")
         log_message(f"Expected log interval: {self.physics_dt * self.divisor}")
 
-        # Reset world time and counter
-        self.world.reset()
-        self._config_controller()  # need to reconfig after world.reset()
+        # Reset simulation
+        self.sim.reset()
 
         # Buffer to the motion start position
         BUFFER_TIME = 5.0
         buffer_control_steps = int(BUFFER_TIME / self.control_dt)
 
         # Get initial joint positions and motion start positions
-        initial_joint_positions = self.robot.get_joint_positions(joint_indices=self.joint_indices)[0]
-        motion_start_positions = np.array([joint_angles[j][0] for j in range(len(self.joint_names))])
+        initial_joint_positions = self.robot.data.joint_pos[0, self.joint_indices]
+        motion_start_positions = joint_angles[:, 0]
 
         # Generate interpolated positions for smooth initialization
         log_message(f"Starting initialization phase with {BUFFER_TIME}s buffer...")
@@ -395,76 +307,69 @@ class JointMotionBenchmark:
                 interpolated_positions = (1 - alpha) * initial_joint_positions + alpha * motion_start_positions
 
                 # Set interpolated positions
-                target_pos = np.zeros((1, self.robot.num_dof), dtype=np.float32)
-                for j, idx in enumerate(self.joint_indices):
-                    target_pos[0, idx] = interpolated_positions[j]
-                self.robot.set_joint_position_targets(target_pos)
+                joint_pos_target = self.robot.data.joint_pos.clone()
+                joint_pos_target[0, self.joint_indices] = interpolated_positions
+                self.robot.set_joint_position_target(joint_pos_target)
+                self.robot.write_data_to_sim()
 
-            self.world.step(True)
-        buffer_end_time = self.world.current_time
+            self.sim.step()
+            self.robot.update(self.physics_dt)
+        buffer_end_time = self.sim.current_time
 
         log_message(
             f"Buffer completed in {BUFFER_TIME:.2f} seconds, {buffer_counter+1} physics steps. "
-            f"Joint positions set to (rad): {list(self.robot.get_joint_positions(joint_indices=self.joint_indices)[0])}"
+            f"Joint positions: {self.robot.data.joint_pos[0, self.joint_indices].cpu().numpy().tolist()}"
         )
 
         log_message("Initialization complete. Starting main motion...")
 
         log_message(
             f"physics_dt: {self.physics_dt} render_dt: {self.render_dt} "
-            f"control_dt: {self.control_dt} divisor: {self.divisor} | "
-            f"Solver type is : {self.world.get_physics_context().get_solver_type()}"
+            f"control_dt: {self.control_dt} divisor: {self.divisor}"
         )
 
-        if self.record_video:
-            self._init_video_writer()
-
-        # 4. Main motion execution
-        for counter in range(len(joint_angles[0]) * self.divisor):
+        # Main motion execution
+        for counter in range(num_timesteps * self.divisor):
             index = int(counter / self.divisor)
-            adjusted_time = self.world.current_time - buffer_end_time
+            adjusted_time = self.sim.current_time - buffer_end_time
 
-            if index >= len(joint_angles[0]):
+            if index >= num_timesteps:
                 break
 
             # Set joint positions
             if counter % self.divisor == 0:
-                target_pos = np.zeros((1, self.robot.num_dof), dtype=np.float32)
-                for j, idx in enumerate(self.joint_indices):
-                    target_pos[0, idx] = joint_angles[j][index]
-                self.robot.set_joint_position_targets(target_pos)
+                joint_pos_target = self.robot.data.joint_pos.clone()
+                target_pos = joint_angles[:, index]
+                joint_pos_target[0, self.joint_indices] = target_pos
+                self.robot.set_joint_position_target(joint_pos_target)
+                self.robot.write_data_to_sim()
 
             # Get and log current state
-            command_positions = np.array([joint_angles[k][index] for k in range(len(self.joint_names))])
-            actual_positions = self.robot.get_joint_positions(joint_indices=self.joint_indices)[0]
-            actual_velocities = self.robot.get_joint_velocities(joint_indices=self.joint_indices)[0]
-            actual_efforts = self.robot.get_measured_joint_efforts(joint_indices=self.joint_indices)[0]
+            command_positions = joint_angles[:, index]
+            actual_positions = self.robot.data.joint_pos[0, self.joint_indices]
+            actual_velocities = self.robot.data.joint_vel[0, self.joint_indices]
+            actual_efforts = self.robot.data.applied_torque[0, self.joint_indices]
 
             self._log_state(
                 time=adjusted_time,
-                command_positions=command_positions,
-                actual_positions=actual_positions,
-                actual_velocities=actual_velocities,
-                actual_efforts=actual_efforts,
+                command_positions=command_positions.cpu().numpy(),
+                actual_positions=actual_positions.cpu().numpy(),
+                actual_velocities=actual_velocities.cpu().numpy(),
+                actual_efforts=actual_efforts.cpu().numpy(),
             )
 
-            if self.record_video:
-                capture_viewport_to_buffer(self.viewport_api, self._capture_video_fn)
-
-            self.world.step(True)
-
-        if self.record_video:
-            self.video_writer.release()
+            self.sim.step()
+            self.robot.update(self.physics_dt)
 
         log_message(
-            f"Motion completed in {counter+1} physics steps. Joint positions stopped at (rad):"
-            f" {list(self.robot.get_joint_positions(joint_indices=self.joint_indices)[0])}"
+            f"Motion completed in {counter+1} physics steps. "
+            f"Joint positions: {self.robot.data.joint_pos[0, self.joint_indices].cpu().numpy().tolist()}"
         )
 
         log_message(f"Benchmark complete for {self.motion_name}. Results saved to {self.sim_output_folder}")
 
-    def log_joint_properties(self):
-        """Print a summary of joint properties including stiffness, damping, max velocity and max effort."""
+    def _log_joint_properties(self):
+        """Print a summary of joint properties."""
         joint_names = self.robot._dof_names
         max_velocities = self.robot.get_joint_max_velocities()[0]
         max_efforts = self.robot.get_max_efforts()[0]
