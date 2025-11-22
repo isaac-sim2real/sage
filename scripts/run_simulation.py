@@ -38,6 +38,20 @@ parser.add_argument("--control-freq", type=int, default=50, required=True, help=
 parser.add_argument(
     "--original-control-freq", type=int, default=None, help="Original control frequency of motion files"
 )
+parser.add_argument(
+    "--kp",
+    nargs="+",
+    type=float,
+    default=None,
+    help="Joint stiffness override. Single value or list of values for each valid joint",
+)
+parser.add_argument(
+    "--kd",
+    nargs="+",
+    type=float,
+    default=None,
+    help="Joint damping override. Single value or list of values for each valid joint",
+)
 parser.add_argument("--solver-type", type=int, default=1, help="Solver type TGS = 1 PGS = 0")
 
 # Append AppLauncher cli args
