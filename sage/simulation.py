@@ -66,6 +66,8 @@ class JointMotionBenchmark:
         self.solver_type = args.solver_type
         self.control_freq = args.control_freq
         self.device = args.device
+        self.kp = args.kp
+        self.kd = args.kd
 
         # Check frequency divisibility
         if self.physics_freq % self.render_freq != 0:
@@ -176,10 +178,64 @@ class JointMotionBenchmark:
             if key in self.robot.data.joint_names:
                 index = self.robot.data.joint_names.index(key)
                 self.joint_indices.append(index)
-        self.joint_indices = torch.tensor(self.joint_indices, dtype=torch.long, device=self.device)
+
+        # Apply kp/kd overrides if provided
+        self._apply_gain_overrides()
 
         # Initialize logging
         self._init_logger()
+
+    def _apply_gain_overrides(self):
+        """Apply kp/kd overrides to valid joints."""
+        if self.kp is None and self.kd is None:
+            return
+
+        num_valid_joints = len(self.joint_indices)
+        log_message("Applying gain overrides for valid joints")
+
+        # Process kp
+        if self.kp is not None:
+            if len(self.kp) == 1:
+                kp_values = torch.full((num_valid_joints,), self.kp[0], dtype=torch.float, device=self.device)
+                log_message(f"Overriding kp with single value: {self.kp[0]} for all joints")
+            elif len(self.kp) == num_valid_joints:
+                kp_values = torch.tensor(self.kp, dtype=torch.float, device=self.device)
+                log_message(f"Overriding kp with per-joint values: {self.kp}")
+            else:
+                raise ValueError(
+                    f"kp list length ({len(self.kp)}) must be 1 or match valid joints ({num_valid_joints})"
+                )
+
+            current_stiffness = self.robot.data.joint_stiffness[0, self.joint_indices].cpu().tolist()
+            log_message(f"kp before override: {current_stiffness}")
+
+            self.robot.write_joint_stiffness_to_sim(stiffness=kp_values, joint_ids=self.joint_indices)
+
+            final_stiffness = self.robot.data.joint_stiffness[0, self.joint_indices].cpu().tolist()
+            log_message(f"kp after override: {final_stiffness}")
+
+        # Process kd
+        if self.kd is not None:
+            if len(self.kd) == 1:
+                kd_values = torch.full((num_valid_joints,), self.kd[0], dtype=torch.float, device=self.device)
+                log_message(f"Overriding kd with single value: {self.kd[0]} for all joints")
+            elif len(self.kd) == num_valid_joints:
+                kd_values = torch.tensor(self.kd, dtype=torch.float, device=self.device)
+                log_message(f"Overriding kd with per-joint values: {self.kd}")
+            else:
+                raise ValueError(
+                    f"kd list length ({len(self.kd)}) must be 1 or match valid joints ({num_valid_joints})"
+                )
+
+            current_damping = self.robot.data.joint_damping[0, self.joint_indices].cpu().tolist()
+            log_message(f"kd before override: {current_damping}")
+
+            self.robot.write_joint_damping_to_sim(damping=kd_values, joint_ids=self.joint_indices)
+
+            final_damping = self.robot.data.joint_damping[0, self.joint_indices].cpu().tolist()
+            log_message(f"kd after override: {final_damping}")
+
+        log_message("Gain overrides applied successfully")
 
     def _init_logger(self):
         """Initialize logger for joint motion benchmark"""
@@ -238,7 +294,7 @@ class JointMotionBenchmark:
                         joint_angles[i].append(float(values[valid_idx]))
 
         # Convert to tensor (num_valid_joints, num_timesteps)
-        joint_angles = torch.tensor(joint_angles, dtype=torch.float32, device=self.device)
+        joint_angles = torch.tensor(joint_angles, dtype=torch.float, device=self.device)
 
         if self.original_control_freq is not None and self.original_control_freq != self.control_freq:
             log_message(f"Resampling motion from {self.original_control_freq}Hz to {self.control_freq}Hz")
@@ -367,24 +423,3 @@ class JointMotionBenchmark:
         )
 
         log_message(f"Benchmark complete for {self.motion_name}. Results saved to {self.sim_output_folder}")
-
-    def _log_joint_properties(self):
-        """Print a summary of joint properties."""
-        joint_names = self.robot._dof_names
-        max_velocities = self.robot.get_joint_max_velocities()[0]
-        max_efforts = self.robot.get_max_efforts()[0]
-        stiffnesses, dampings = self.robot.get_gains()
-        stiffnesses = stiffnesses[0]
-        dampings = dampings[0]
-
-        log_message("\nJoint Properties Summary:")
-        log_message("=" * 110)
-        log_message(f"{'Joint Name':<50} {'Stiffness':<15} {'Damping':<15} {'Max Velocity':<15} {'Max Effort':<15}")
-        log_message("-" * 110)
-        for i, name in enumerate(joint_names):
-            log_message(
-                f"{name:<50} {stiffnesses[i]:<15.2e} "
-                f"{dampings[i]:<15.2e} {max_velocities[i]:<15.2e} "
-                f"{max_efforts[i]:<15.2e}"
-            )
-        log_message("=" * 110)
