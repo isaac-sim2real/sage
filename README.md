@@ -2,11 +2,11 @@
 
 <div align="center">
 
-[![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.2.0-b.svg)](https://isaac-sim.github.io/IsaacLab/v2.2.0/index.html)
-[![IsaacSim](https://img.shields.io/badge/IsaacSim-5.0.0-b.svg)](https://docs.isaacsim.omniverse.nvidia.com/5.0.0/index.html)
+[![Isaac Lab](https://img.shields.io/badge/IsaacLab-2.3.0-b.svg)](https://isaac-sim.github.io/IsaacLab/v2.3.0/index.html)
+[![IsaacSim](https://img.shields.io/badge/IsaacSim-5.1.0-b.svg)](https://docs.isaacsim.omniverse.nvidia.com/5.1.0/index.html)
 [![Linux platform](https://img.shields.io/badge/Platform-linux--64-orange.svg)](https://ubuntu.com/blog/tag/22-04-lts)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
 
 </div>
 
@@ -37,13 +37,16 @@ SAGE combines:
   - [Simulation Output](#simulation-output)
   - [Real Robot Output](#real-robot-output)
   - [Processed Sim2Real Datasets](#processed-sim2real-datasets)
+    - [Unitree Dataset](#unitree-dataset)
+    - [RealMan Dataset](#realman-dataset)
 - [Adding New Humanoids](#adding-new-humanoids)
   - [Input Preparation](#input-preparation)
   - [Simulation Setup](#simulation-setup)
-  - [Real Robot Integration](#real-robot-integration)
+  - [Real Robot Integration](#real-robot-integration-1)
 - [Configuration](#configuration)
   - [Files and Directories](#files-and-directories)
   - [Robot Configuration Parameters](#robot-configuration-parameters)
+- [Contributors](#contributors)
 - [Contributing](#contributing)
 - [License](#license)
 - [Citation](#citation)
@@ -53,12 +56,16 @@ SAGE combines:
 ### Prerequisites
 
 - Ubuntu 22.04 LTS
+- Python 3.11
 - NVIDIA GPU with compatible drivers
-- Python 3.10
-- Isaac Sim 5.0.0
-- Isaac Lab 2.2.0
+- Isaac Sim 5.1.0
+- Isaac Lab 2.3.0
 
 > **Note:** If you are using the provided Docker image, you do not need to install Python, Isaac Sim, and Isaac Lab. These dependencies are pre-installed in the Docker image.
+
+### Isaac Lab Setup
+
+Follow the [Isaac Lab installation guide](https://isaac-sim.github.io/IsaacLab/v2.3.0/source/setup/installation/index.html) to set up Isaac Sim and Isaac Lab.
 
 Clone the repository:
 
@@ -132,8 +139,7 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --physics-freq 200 \
     --render-freq 200 \
     --control-freq 50 \
-    --kp 100 \
-    --kd 2 \
+    --original-control-freq 60 \
     --headless
 ```
 
@@ -239,6 +245,7 @@ The complete dataset containing both Unitree and RealMan robot data is available
 This dataset captures complex upper-body motions of the H1-2 humanoid robot under varying payload conditions (0 kg, 1 kg, 2 kg, and 3 kg). The motions are adapted from the open-source AMASS dataset and carefully post-processed to ensure reliable execution on the real robot. Each trajectory includes corresponding simulation replays, providing paired sim-real data for gap analysis and compensation model training.
 
 **Data Variants:**
+
 - **Standard split**: Training and test sets with upper-body motions (`train.npz`, `test.npz`)
 - **Gait variations**: Upper-body motions paired with different lower-body gaits (locomotion, squatting, upper-only) to enhance data diversity
 - **Whole-body extension**: A subset featuring full-body coordinated motions for comprehensive sim2real research
@@ -272,10 +279,8 @@ This section gives a general idea to add simulation support for a new humanoid. 
 
 **2. Update Simulation Code**
 
-- Modify `joint_motion_gap/simulation.py`:
-  - Add robot name to supported robots list
-  - Configure USD path and prim path for your robot
-  - Adjust any robot-specific simulation parameters
+- Modify `sage/robots/{robot_manufacture}.py` following IsaacLab's [robots configurations](https://isaac-sim.github.io/IsaacLab/v2.3.0/source/setup/quickstart.html#robots):
+- Add the new robot configuration mapping in `ROBOT_CFGS` mapping in `sage/assets.py`.
 
 **3. Add Joint Configuration**
 
@@ -306,29 +311,32 @@ This section provides methods for extending our current real data collection pip
 
 ### Files and Directories
 
-- **Robot Asset Configurations**: `sage/assets.py`
+- **Robot Asset Configurations**: `sage/assets.py` and `sage/robots/`
 - **Robot Assets**: `assets/{robot_name}/`
 - **Valid Joints**: `configs/{robot_name}_valid_joints.txt`
 - **Motion Files**: `motion_files/{robot_name}/{source}/`
 
 ### Robot Configuration Parameters
 
-Each robot in `assets.py` can specify:
+Each robot in `sage/robots` can specify with IsaacLab's [robot instances configuration](https://isaac-sim.github.io/IsaacLab/v2.3.0/source/setup/quickstart.html#robots).
 
-- `usd_path`: Path to robot USD file
-- `offset`: (x, y, z) spawn position
-- `default_kp`: Default stiffness for PD controller
-- `default_kd`: Default damping gain for PD controller
-- `default_control_freq`: Default control frequency (Hz) for motion playback
-
-> **Parameter Priority System:**
-> Control parameters (`kp`, `kd`, `control_freq`, `original_control_freq`) are resolved in the following order:
+> **Command Line Parameters:**
 >
-> 1. **Command-line arguments** - Explicitly provided via `--kp`, `--kd`, `--control-freq`, `--original-control-freq`
-> 2. **Robot configuration** - Defaults from `assets.py` if arguments are not provided
-> 3. **Error** - Raises an error if neither source is configured
+> Control parameters can be customized per run using the following arguments:
 >
-> This design allows robot-specific defaults while enabling per-run customization.
+> 1. **Joint Gains (`--kp`, `--kd`)**: Override the robot's actuator stiffness and damping values.
+>
+>    - **Single value**: Apply the same gain to all valid joints (e.g., `--kp 100.0`)
+>    - **Per-joint values**: Provide a space-separated list matching the number of valid joints (e.g., `--kp 100.0 150.0 200.0`)
+>    - Before and after values are logged for verification
+>
+> 2. **Control Frequency Alignment (`--control-freq`, `--original-control-freq`)**:
+>
+>    - `--control-freq`: Target simulation control frequency in Hz (default: 50 Hz)
+>    - `--original-control-freq`: Original recording frequency of the motion source data (default: `None`)
+>      - When `None`, motion data is used as-is without resampling
+>      - When specified and different from `--control-freq`, motion data is automatically resampled using tensor-based interpolation to match the target control frequency
+>    - Example: `--control-freq 100 --original-control-freq 50` will upsample 50 Hz motion data to 100 Hz
 
 **Supported Robots:** h1_2, g1, wr75s
 
