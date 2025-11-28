@@ -404,7 +404,12 @@ class JointMotionBenchmark:
             command_positions = joint_angles[:, index]
             actual_positions = self.robot.data.joint_pos[0, self.joint_indices]
             actual_velocities = self.robot.data.joint_vel[0, self.joint_indices]
-            actual_efforts = self.robot.data.applied_torque[0, self.joint_indices]
+
+            # Get link incoming joint forces
+            # 6D, including the active and passive components of the force
+            link_forces = self.robot.root_physx_view.get_link_incoming_joint_force()
+            # Extract torque components (last 3 elements of 6D force) and compute magnitude
+            actual_efforts = torch.norm(link_forces[0, self.joint_indices, -3:], dim=1)
 
             self._log_state(
                 time=adjusted_time,
