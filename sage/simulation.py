@@ -158,7 +158,7 @@ class JointMotionBenchmark:
         with open(self.motion_file) as file:
             first_line = file.readline().strip()
 
-            all_joint_names = [name.strip() for name in first_line.split(",")]
+            all_joint_names = [name.strip().split("/")[-1] for name in first_line.split(",")]
 
             # Filter joints to only include valid ones
             if self.set_valid_joints:
@@ -271,7 +271,7 @@ class JointMotionBenchmark:
             lines = file.readlines()
 
         # Parse joint names from first line, removing any whitespace
-        all_joint_names = [name.strip() for name in lines[0].strip().split(",")]
+        all_joint_names = [name.strip().split("/")[-1] for name in lines[0].strip().split(",")]
 
         # Find indices of valid joints in the motion file
         valid_indices = []
