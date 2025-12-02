@@ -87,7 +87,7 @@ def main():
             motion_name = get_motion_name(motion_file)
             log_message(f"################### PROCESSING {motion_file} ###################")
             # Set up and run benchmark for this motion
-            benchmark.set_motion(motion_file, motion_name)
+            benchmark.setup_motion(motion_file, motion_name)
             benchmark.run_benchmark()
 
         except Exception as e:
