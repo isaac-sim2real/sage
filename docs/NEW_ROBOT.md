@@ -113,55 +113,107 @@ _Figure 3: Robot Joint Hierarchy in Stage Panel_
 ![Robot Placement](images/robot_z_offset.png) \
 _Figure 4: Robot Z-Offset Testing_
 
-## Step 2: Register Your Robot
+## Step 2: Create Robot Configuration File
 
-### 2.1 Add Robot Configuration
+The framework uses **IsaacLab's ArticulationCfg** system for robot configuration. This provides fine-grained control over physics properties and actuators.
 
-Locate the `ROBOT_CONFIGS` dictionary in `<REPO_ROOT>/sage/assets.py` and add your robot entry:
+### 2.1 Create Robot Configuration Module
+
+Create a new Python file for your robot manufacturer: `<REPO_ROOT>/sage/robots/fourier.py`
+
+<details>
+<summary><b>Example Configuration Structure for <code>sage/robots/fourier.py</code></b> (click to expand)</summary>
 
 ```python
-ROBOT_CONFIGS = {
-    # ... existing robots ...
+"""Configuration for Fourier robots."""
 
-    # Add your new robot here:
-    "gr1t2": {
-        "usd_path": "assets/GR1T2_nohand/GR1T2_nohand.usd",
-        "offset": (0.0, 0.0, 0.96),
-        "default_kp": 100.0,
-        "default_kd": 2.0,
-        "default_control_freq": 50,
+import isaaclab.sim as sim_utils
+from isaaclab.actuators import ImplicitActuatorCfg
+from isaaclab.assets import ArticulationCfg
+
+##
+# Configuration
+##
+
+GR1T2_CFG = ArticulationCfg(
+    spawn=sim_utils.UsdFileCfg(
+        usd_path="assets/GR1T2_nohand/GR1T2_nohand.usd",
+        activate_contact_sensors=True,
+        rigid_props=sim_utils.RigidBodyPropertiesCfg(
+            disable_gravity=False,
+            retain_accelerations=False,
+            linear_damping=0.0,
+            angular_damping=0.0,
+            max_linear_velocity=1000.0,
+            max_angular_velocity=1000.0,
+            max_depenetration_velocity=1.0,
+        ),
+        articulation_props=sim_utils.ArticulationRootPropertiesCfg(
+            enabled_self_collisions=False,
+            solver_position_iteration_count=8,
+            solver_velocity_iteration_count=4,
+        ),
+    ),
+    init_state=ArticulationCfg.InitialStateCfg(
+        pos=(0.0, 0.0, 0.96),  # Use Z-offset from Step 1.4
+        joint_pos={".*": 0.0},  # Default joint positions (all zero)
+        joint_vel={".*": 0.0},
+    ),
+    soft_joint_pos_limit_factor=0.9,
+    actuators={
+        "arms": ImplicitActuatorCfg(
+            joint_names_expr=[
+                ".*_shoulder_pitch_joint",
+                ".*_shoulder_roll_joint",
+                ".*_shoulder_yaw_joint",
+                ".*_elbow_pitch_joint",
+                ".*_wrist_roll_joint",
+            ],
+            effort_limit_sim=300,
+            stiffness=40.0,  # kp gain
+            damping=10.0,    # kd gain
+        ),
     },
+)
+"""Configuration for Fourier GR1T2 humanoid robot."""
+```
+
+</details><br>
+
+**Key Configuration Parameters:**
+
+- **`spawn.usd_path`**: Path to your USD file (use the Z-offset from Step 1.4 in `init_state.pos`)
+- **`init_state`**: Initial robot pose and joint positions
+- **`actuators`**: Define actuator groups with stiffness (kp) and damping (kd) gains
+
+**Additional Resources:**
+
+For comprehensive tutorials and detailed documentation on robot configuration:
+
+- [Adding a New Robot to Isaac Lab Tutorial](https://isaac-sim.github.io/IsaacLab/v2.3.0/source/tutorials/01_assets/add_new_robot.html) - Step-by-step tutorial with examples
+- [IsaacLab ArticulationCfg API Documentation](https://isaac-sim.github.io/IsaacLab/v2.3.0/source/api/lab/isaaclab.assets.html#isaaclab.assets.ArticulationCfg) - Complete API reference
+- [IsaacLab Actuators Documentation](https://isaac-sim.github.io/IsaacLab/v2.3.0/source/api/lab/isaaclab.actuators.html) - Actuator configuration details
+
+### 2.2 Register Robot in Assets Registry
+
+Update `<REPO_ROOT>/sage/assets.py` to import and register your robot:
+
+1. **Add import statement** at the top (import from the manufacturer module):
+
+```python
+from .robots.fourier import GR1T2_CFG
+```
+
+2. **Add to `ROBOT_CFGS` dictionary**:
+
+```python
+ROBOT_CFGS = {
+    # ... existing robots ...
+    "gr1t2": GR1T2_CFG,  # Add your robot here
 }
 ```
 
-**Configuration Parameters:**
-
-| Parameter                  | Type                         | Required  | Description                                                                           | Example                                  |
-| -------------------------- | ---------------------------- | --------- | ------------------------------------------------------------------------------------- | ---------------------------------------- |
-| **Dictionary Key**         | `str`                        | **Yes**   | Robot identifier (lowercase, used as the robot name)                                  | `"gr1t2"`                                |
-| **`usd_path`**             | `str`                        | **Yes**   | Path to USD file (relative to `<REPO_ROOT>` or use `{ISAAC_NUCLEUS_DIR}` placeholder) | `"assets/GR1T2_nohand/GR1T2_nohand.usd"` |
-| **`offset`**               | `tuple[float, float, float]` | **Yes**   | Position offset `(x, y, z)` in meters (from Step 1.4)                                 | `(0.0, 0.0, 0.96)`                       |
-| **`prim_path`**            | `str`                        | No        | USD prim path for the robot                                                           | `"/World/Robot"` (default)               |
-| **`default_kp`**           | `float`                      | **Yes\*** | Default proportional gain for PD controller                                           | `100.0`                                  |
-| **`default_kd`**           | `float`                      | **Yes\*** | Default derivative gain for PD controller                                             | `2.0`                                    |
-| **`default_control_freq`** | `int`                        | **Yes\*** | Default control frequency in Hz for motion playback                                   | `50`                                     |
-
-\* _Required unless overridden via command-line arguments (`--kp`, `--kd`, `--control-freq`)_
-
-**Important Notes:**
-
-- **Dictionary key**: Use lowercase for consistency (e.g., `"gr1t2"` not `"GR1T2"`). This becomes the robot name
-- **USD Path Options**:
-  - **Relative path**: `"assets/your_robot/robot.usd"` - For local assets in the repository
-  - **Nucleus path with placeholder**: `"{ISAAC_NUCLEUS_DIR}/Robots/Manufacturer/Model/robot.usd"` - For assets on Isaac Sim Nucleus server
-  - The `{ISAAC_NUCLEUS_DIR}` placeholder is automatically resolved at runtime
-- **Offset values**: Use the Z-offset value you determined in Step 1.4
-- **Control Parameters**: The framework uses a priority system for control parameters:
-  1. Command-line arguments (`--kp`, `--kd`, `--control-freq`) take highest priority
-  2. Robot configuration defaults are used if arguments are not provided
-  3. An error is raised if neither is configured
-
-## Step 3: Create Robot Configuration File
+## Step 3: Create Valid Joints Configuration File
 
 Create a configuration file that specifies which joints should be controlled during simulation.
 
@@ -235,13 +287,15 @@ left_shoulder_pitch_joint, left_shoulder_roll_joint, left_shoulder_yaw_joint, ..
 - Each line after the header represents one timestep
 - Values must be in radians (not degrees)
 - Number of values per line must match the number of joints in header
+- The system will filter to only use joints listed in your valid joints file
 
 ### 4.3 Add Custom Motion Source
 
 If you're adding a new motion source category, update the argument parser in `<REPO_ROOT>/scripts/run_simulation.py`:
 
-1. **Locate the `main` function** and find the `motion-source` argument
-2. **Add your new motion source** to the choices list:
+1. **Locate the argument parser** near the top of the file
+2. **Find the `--motion-source` argument** definition
+3. **Add your new motion source** to the choices list:
 
 ```python
 parser.add_argument(
@@ -267,6 +321,7 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --motion-files motion_files/gr1t2/custom/custom_motion.txt \
     --valid-joints-file configs/gr1t2_valid_joints.txt \
     --output-folder results \
+    --control-freq 50 \
     --fix-root
 ```
 
