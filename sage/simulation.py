@@ -149,62 +149,69 @@ class JointMotionBenchmark:
 
         log_message(f"Loaded robot {self.robot_name}")
 
-    def set_motion(self, motion_file, motion_name):
-        """Set up for a new motion file."""
+    def setup_motion(self, motion_file, motion_name):
+        """Set up and prepare motion data for benchmark."""
         self.motion_file = motion_file
         self.motion_name = motion_name
 
-        # Load joint configuration data
-        with open(self.motion_file) as file:
-            first_line = file.readline().strip()
+        # Parse motion file and configure joints
+        self._parse_motion_file()
 
-            all_joint_names = [name.strip().split("/")[-1] for name in first_line.split(",")]
-
-            # Filter joints to only include valid ones
-            if self.set_valid_joints:
-                self.joint_names = [joint for joint in all_joint_names if joint in self.valid_joint_names]
-            else:
-                self.joint_names = all_joint_names
-
-            if not self.joint_names:
-                raise ValueError("No valid joints found in motion file that match the config file")
-
-            log_message(f"Filtered {len(self.joint_names)} valid joints from motion file")
-
-        # Map joint names to indices
-        self.joint_indices = []
-        for joint in self.joint_names:
-            key = joint.split("/")[-1]
-            if key in self.robot.data.joint_names:
-                index = self.robot.data.joint_names.index(key)
-                self.joint_indices.append(index)
-
-        # Apply kp/kd overrides if provided
-        self._apply_gain_overrides()
+        # Load and preprocess motion data (includes resampling if needed)
+        log_message(f"Loading motion data from {self.motion_file}...")
+        self.joint_angles = self._load_motion()
 
         # Initialize logging
         self._init_logger()
+
+    def _parse_motion_file(self):
+        """Parse motion file and set up joint mappings."""
+        # Load joint configuration data
+        with open(self.motion_file) as file:
+            self._motion_lines = file.readlines()
+
+        # Parse joint names from first line
+        self._all_joint_names = [name.strip().split("/")[-1] for name in self._motion_lines[0].strip().split(",")]
+
+        # Filter joints to only include valid ones
+        if self.set_valid_joints:
+            self.joint_names = [joint for joint in self._all_joint_names if joint in self.valid_joint_names]
+            log_message(f"Filtered {len(self.joint_names)} valid joints from motion file")
+        else:
+            self.joint_names = self._all_joint_names
+            log_message(f"Using all {len(self.joint_names)} joints from motion file")
+
+        if not self.joint_names:
+            raise ValueError("No valid joints found in motion file that match the config file")
+
+        # Find indices of valid joints in the motion file
+        self._valid_motion_indices = [self._all_joint_names.index(joint) for joint in self.joint_names]
+
+        # Map joint names to robot joint indices
+        self.joint_indices = []
+        for joint in self.joint_names:
+            if joint in self.robot.data.joint_names:
+                index = self.robot.data.joint_names.index(joint)
+                self.joint_indices.append(index)
 
     def _apply_gain_overrides(self):
         """Apply kp/kd overrides to valid joints."""
         if self.kp is None and self.kd is None:
             return
 
-        num_valid_joints = len(self.joint_indices)
+        num_joints = len(self.joint_indices)
         log_message("Applying gain overrides for valid joints")
 
         # Process kp
         if self.kp is not None:
             if len(self.kp) == 1:
-                kp_values = torch.full((num_valid_joints,), self.kp[0], dtype=torch.float, device=self.device)
+                kp_values = torch.full((num_joints,), self.kp[0], dtype=torch.float, device=self.device)
                 log_message(f"Overriding kp with single value: {self.kp[0]} for all joints")
-            elif len(self.kp) == num_valid_joints:
+            elif len(self.kp) == num_joints:
                 kp_values = torch.tensor(self.kp, dtype=torch.float, device=self.device)
                 log_message(f"Overriding kp with per-joint values: {self.kp}")
             else:
-                raise ValueError(
-                    f"kp list length ({len(self.kp)}) must be 1 or match valid joints ({num_valid_joints})"
-                )
+                raise ValueError(f"kp list length ({len(self.kp)}) must be 1 or match valid joints ({num_joints})")
 
             current_stiffness = self.robot.data.joint_stiffness[0, self.joint_indices].cpu().tolist()
             log_message(f"kp before override: {current_stiffness}")
@@ -217,15 +224,13 @@ class JointMotionBenchmark:
         # Process kd
         if self.kd is not None:
             if len(self.kd) == 1:
-                kd_values = torch.full((num_valid_joints,), self.kd[0], dtype=torch.float, device=self.device)
+                kd_values = torch.full((num_joints,), self.kd[0], dtype=torch.float, device=self.device)
                 log_message(f"Overriding kd with single value: {self.kd[0]} for all joints")
-            elif len(self.kd) == num_valid_joints:
+            elif len(self.kd) == num_joints:
                 kd_values = torch.tensor(self.kd, dtype=torch.float, device=self.device)
                 log_message(f"Overriding kd with per-joint values: {self.kd}")
             else:
-                raise ValueError(
-                    f"kd list length ({len(self.kd)}) must be 1 or match valid joints ({num_valid_joints})"
-                )
+                raise ValueError(f"kd list length ({len(self.kd)}) must be 1 or match valid joints ({num_joints})")
 
             current_damping = self.robot.data.joint_damping[0, self.joint_indices].cpu().tolist()
             log_message(f"kd before override: {current_damping}")
@@ -267,51 +272,43 @@ class JointMotionBenchmark:
 
     def _load_motion(self):
         """Load motion data from file"""
-        with open(self.motion_file) as file:
-            lines = file.readlines()
-
-        # Parse joint names from first line, removing any whitespace
-        all_joint_names = [name.strip().split("/")[-1] for name in lines[0].strip().split(",")]
-
-        # Find indices of valid joints in the motion file
-        valid_indices = []
-        for joint in self.joint_names:
-            idx = all_joint_names.index(joint)
-            valid_indices.append(idx)
-
-        # Parse joint values from subsequent lines, only for valid joints
-        joint_angles = [[] for _ in range(len(valid_indices))]
-        for line in lines[1:]:
+        joint_angles = [[] for _ in range(len(self._valid_motion_indices))]
+        for line in self._motion_lines[1:]:
             # Skip empty lines
             if not line.strip():
                 continue
             # Split line and remove whitespace
             values = [val.strip() for val in line.strip().split(",")]
             # Only process lines that have the correct number of values
-            if len(values) == len(all_joint_names):
-                for i, valid_idx in enumerate(valid_indices):
+            if len(values) == len(self._all_joint_names):
+                for i, valid_idx in enumerate(self._valid_motion_indices):
                     if values[valid_idx]:  # Only convert non-empty strings
                         joint_angles[i].append(float(values[valid_idx]))
 
-        # Convert to tensor (num_valid_joints, num_timesteps)
+        # Convert to tensor (num_joints, num_timesteps)
         joint_angles = torch.tensor(joint_angles, dtype=torch.float, device=self.device)
 
+        # Resample if needed
         if self.original_control_freq is not None and self.original_control_freq != self.control_freq:
-            log_message(f"Resampling motion from {self.original_control_freq}Hz to {self.control_freq}Hz")
+            joint_angles = self._resample_motion(joint_angles)
 
-            # Calculate new length to match target control freq
-            old_len = joint_angles.shape[1]
-            duration = old_len / self.original_control_freq
-            new_len = int(round(duration * self.control_freq))
+        return joint_angles
 
-            # Linear interpolation
-            # Reshape to (1, num_valid_joints, old_len)
-            joint_angles = joint_angles.unsqueeze(0)
-            joint_angles = torch.nn.functional.interpolate(
-                joint_angles, size=new_len, mode="linear", align_corners=True
-            )
-            # Back to (num_valid_joints, new_len)
-            joint_angles = joint_angles.squeeze(0)
+    def _resample_motion(self, joint_angles):
+        """Resample motion data to match target control frequency"""
+        log_message(f"Resampling motion from {self.original_control_freq}Hz to {self.control_freq}Hz")
+
+        # Calculate new length to match target control freq
+        old_len = joint_angles.shape[1]
+        duration = old_len / self.original_control_freq
+        new_len = int(round(duration * self.control_freq))
+
+        # Linear interpolation
+        # Reshape to (1, num_joints, old_len)
+        joint_angles = joint_angles.unsqueeze(0)
+        joint_angles = torch.nn.functional.interpolate(joint_angles, size=new_len, mode="linear", align_corners=True)
+        # Back to (num_joints, new_len)
+        joint_angles = joint_angles.squeeze(0)
 
         return joint_angles
 
@@ -331,10 +328,7 @@ class JointMotionBenchmark:
 
     def run_benchmark(self):
         """Run the benchmark for the current motion file"""
-        # Load motion data
-        log_message(f"Loading motion data from {self.motion_file}...")
-        joint_angles = self._load_motion()
-        num_timesteps = joint_angles.shape[1]
+        num_timesteps = self.joint_angles.shape[1]
 
         log_message(f"Physics dt: {self.physics_dt}, Rendering dt: {self.physics_dt * self.divisor}")
         log_message(f"Expected log interval: {self.physics_dt * self.divisor}")
@@ -342,13 +336,16 @@ class JointMotionBenchmark:
         # Reset simulation
         self.sim.reset()
 
+        # Apply kp/kd overrides if provided
+        self._apply_gain_overrides()
+
         # Buffer to the motion start position
         BUFFER_TIME = 5.0
         buffer_control_steps = int(BUFFER_TIME / self.control_dt)
 
         # Get initial joint positions and motion start positions
         initial_joint_positions = self.robot.data.joint_pos[0, self.joint_indices]
-        motion_start_positions = joint_angles[:, 0]
+        motion_start_positions = self.joint_angles[:, 0]
 
         # Generate interpolated positions for smooth initialization
         log_message(f"Starting initialization phase with {BUFFER_TIME}s buffer...")
@@ -395,13 +392,13 @@ class JointMotionBenchmark:
             # Set joint positions
             if counter % self.divisor == 0:
                 joint_pos_target = self.robot.data.joint_pos.clone()
-                target_pos = joint_angles[:, index]
+                target_pos = self.joint_angles[:, index]
                 joint_pos_target[0, self.joint_indices] = target_pos
                 self.robot.set_joint_position_target(joint_pos_target)
                 self.robot.write_data_to_sim()
 
             # Get and log current state
-            command_positions = joint_angles[:, index]
+            command_positions = self.joint_angles[:, index]
             actual_positions = self.robot.data.joint_pos[0, self.joint_indices]
             actual_velocities = self.robot.data.joint_vel[0, self.joint_indices]
 
