@@ -140,6 +140,7 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --render-freq 200 \
     --control-freq 50 \
     --original-control-freq 60 \
+    --motion-speed-factor 1.0 \
     --headless
 ```
 
@@ -337,6 +338,14 @@ Each robot in `sage/robots` can specify with IsaacLab's [robot instances configu
 >      - When `None`, motion data is used as-is without resampling
 >      - When specified and different from `--control-freq`, motion data is automatically resampled using tensor-based interpolation to match the target control frequency
 >    - Example: `--control-freq 100 --original-control-freq 50` will upsample 50 Hz motion data to 100 Hz
+>
+> 3. **Motion Playback Speed (`--motion-speed-factor`)**:
+>
+>    - `--motion-speed-factor`: Speed factor for motion playback (default: 1.0)
+>      - Values > 1.0 speed up the motion (e.g., 2.0 = 2x faster, halving the duration)
+>      - Values < 1.0 slow down the motion (e.g., 0.5 = half speed, doubling the duration)
+>      - Works in conjunction with `--control-freq` and `--original-control-freq` for resampling
+>    - Example: `--motion-speed-factor 2.0 --control-freq 50 --original-control-freq 60` will take motion originally 2s at 60 Hz (120 steps) and resample it to 1s at 50 Hz (50 steps, playing 2x faster)
 
 **Supported Robots:** h1_2, g1, wr75s
 
