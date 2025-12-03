@@ -38,6 +38,7 @@ parser.add_argument("--control-freq", type=int, default=50, required=True, help=
 parser.add_argument(
     "--original-control-freq", type=int, default=None, help="Original control frequency of motion files"
 )
+parser.add_argument("--motion-speed-factor", type=float, default=1.0, help="Speed factor for motion playback")
 parser.add_argument(
     "--kp",
     nargs="+",
