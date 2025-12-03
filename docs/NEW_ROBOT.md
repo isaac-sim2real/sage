@@ -322,6 +322,7 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --valid-joints-file configs/gr1t2_valid_joints.txt \
     --output-folder results \
     --control-freq 50 \
+    --motion-speed-factor 1.0 \
     --fix-root
 ```
 

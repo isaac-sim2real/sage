@@ -63,6 +63,7 @@ class JointMotionBenchmark:
         self.physics_freq = args.physics_freq
         self.render_freq = args.render_freq
         self.original_control_freq = args.original_control_freq
+        self.motion_speed_factor = args.motion_speed_factor
         self.solver_type = args.solver_type
         self.control_freq = args.control_freq
         self.device = args.device
@@ -157,7 +158,7 @@ class JointMotionBenchmark:
         # Parse motion file and configure joints
         self._parse_motion_file()
 
-        # Load and preprocess motion data (includes resampling if needed)
+        # Load and preprocess motion data
         log_message(f"Loading motion data from {self.motion_file}...")
         self.joint_angles = self._load_motion()
 
@@ -295,13 +296,20 @@ class JointMotionBenchmark:
         return joint_angles
 
     def _resample_motion(self, joint_angles):
-        """Resample motion data to match target control frequency"""
-        log_message(f"Resampling motion from {self.original_control_freq}Hz to {self.control_freq}Hz")
-
-        # Calculate new length to match target control freq
+        """Resample motion data to match target control frequency and apply speed factor"""
+        # Calculate original and scaled duration
         old_len = joint_angles.shape[1]
-        duration = old_len / self.original_control_freq
-        new_len = int(round(duration * self.control_freq))
+        original_duration = old_len / self.original_control_freq
+        target_duration = original_duration / self.motion_speed_factor
+
+        new_len = int(round(target_duration * self.control_freq))
+        scaled_duration = new_len / self.control_freq
+
+        log_message(
+            f"Resampling motion at {self.motion_speed_factor}x speed: "
+            f"{self.original_control_freq}Hz ({old_len} steps, {original_duration:.2f}s) "
+            f"-> {self.control_freq}Hz ({new_len} steps, {scaled_duration:.2f}s)"
+        )
 
         # Linear interpolation
         # Reshape to (1, num_joints, old_len)
