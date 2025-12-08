@@ -26,9 +26,8 @@ SAGE combines:
 - [Table of Contents](#table-of-contents)
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
-  - [Isaac Lab Setup](#isaac-lab-setup)
-  - [Package Installation](#package-installation)
-  - [Environment Setup](#environment-setup)
+  - [Host Setup](#host-setup)
+  - [Docker Setup](#docker-setup)
 - [Usage](#usage)
   - [Simulation Execution](#simulation-execution)
   - [Data Analysis](#data-analysis)
@@ -54,33 +53,67 @@ SAGE combines:
 ### Prerequisites
 
 - Ubuntu 22.04 LTS
-- Python 3.10
 - NVIDIA GPU with compatible drivers
+- Python 3.10
 - Isaac Sim 5.0.0
 - Isaac Lab 2.2.0
 
-### Isaac Lab Setup
+> **Note:** If you are using the provided Docker image, you do not need to install Python, Isaac Sim, and Isaac Lab. These dependencies are pre-installed in the Docker image.
 
-Follow the [Isaac Lab installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html) to set up Isaac Sim and Isaac Lab.
-
-### Package Installation
+Clone the repository:
 
 ```bash
-# Clone the repository
 git clone https://github.com/isaac-sim2real/sage.git
 cd sage
+```
 
+For the rest of installation, you can install the necessary dependencies either directly on your host machine, or by using the provided Docker image.
+
+### Host Setup
+
+Follow the [Isaac Lab installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html) to set up Isaac Sim and Isaac Lab, and then install the dependencies:
+
+```bash
 # Install dependencies
 pip install -r requirements.txt
 ```
-
-### Environment Setup
 
 Set the PYTHONPATH to allow scripts to find the package:
 
 ```bash
 export PYTHONPATH="$(pwd):${PYTHONPATH}"
 ```
+
+### Docker Setup
+
+Alternatively if you have [Docker](https://docs.docker.com/engine/install/ubuntu/) and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed, you can build the Docker image without installing the dependencies on your host machine.
+
+```bash
+docker build -t sage .
+```
+
+then start the container:
+
+```bash
+xhost +
+docker run --name isaac-lab --entrypoint bash -it --gpus all -e "ACCEPT_EULA=Y" --rm --network=host \
+   -e "PRIVACY_CONSENT=Y" \
+   -e DISPLAY \
+   -v /tmp/.X11-unix:/tmp/.X11-unix \
+   -v $HOME/.Xauthority:/root/.Xauthority \
+   -v ~/docker/isaac-sim/cache/kit:/isaac-sim/kit/cache:rw \
+   -v ~/docker/isaac-sim/cache/ov:/root/.cache/ov:rw \
+   -v ~/docker/isaac-sim/cache/pip:/root/.cache/pip:rw \
+   -v ~/docker/isaac-sim/cache/glcache:/root/.cache/nvidia/GLCache:rw \
+   -v ~/docker/isaac-sim/cache/computecache:/root/.nv/ComputeCache:rw \
+   -v ~/docker/isaac-sim/logs:/root/.nvidia-omniverse/logs:rw \
+   -v ~/docker/isaac-sim/data:/root/.local/share/ov/data:rw \
+   -v ~/docker/isaac-sim/documents:/root/Documents:rw \
+   -v $(pwd):/app:rw \
+   sage
+```
+
+and run the rest of the commands in the container.
 
 ## Usage
 
@@ -103,6 +136,8 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --kd 2 \
     --headless
 ```
+
+This should take about 20 minutes to complete. For debugging purposes, you can run the script without the `--headless` flag to visualize the simulation.
 
 ### Data Analysis
 
