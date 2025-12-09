@@ -1,0 +1,53 @@
+workflow:
+  name: sage
+  tasks:
+  - name: sage
+    image: nvcr.io/nvidia/isaac-lab:2.3.0
+    command: ["bash"]
+    args: ["/tmp/entry.sh"]
+    environment:
+      ACCEPT_EULA: Y
+      NO_NUCLEUS: Y
+      PRIVACY_CONSENT: Y
+    files:
+    - contents: |
+        set -euxo pipefail
+        # Hide conflicting vulkan files, if needed
+        if [ -e "/usr/share/vulkan" ] && [ -e "/etc/vulkan" ]; then
+          mv /usr/share/vulkan /usr/share/vulkan_hidden
+        fi
+
+        # Install git-lfs
+        apt-get update && apt-get install -y git-lfs
+        git lfs install
+
+        git clone https://github.com/isaac-sim2real/sage.git
+        cd sage
+        git lfs pull
+
+        # Install dependencies
+        /isaac-sim/python.sh -m pip install -r requirements.txt
+
+        # Run simulation for all 3 robots with all AMASS motions
+        for robot in h1_2 g1 wr75s; do
+          /isaac-sim/python.sh scripts/run_simulation.py --robot-name $robot --motion-source amass \
+          --motion-files motion_files/$robot/amass --valid-joints-file configs/${robot}_valid_joints.txt \
+          --output-folder output --physics-freq 200 --render-freq 200 --control-freq 50 --headless --fix-root
+        done
+
+        # Run analysis for h1_2 with all AMASS motions
+        /isaac-sim/python.sh scripts/run_analysis.py --robot-name h1_2 --motion-source amass \
+        --motion-names "*" --output-folder output --valid-joints-file configs/h1_2_valid_joints.txt
+
+        cp -r output {{output}}
+      path: /tmp/entry.sh
+    outputs:
+    - dataset:
+        name: sage
+  resources:
+    default:
+      cpu:  16
+      gpu: 1
+      memory: 32Gi
+      storage: 48Gi
+      platform: ovx-a40

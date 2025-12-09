@@ -32,6 +32,7 @@ SAGE combines:
   - [Simulation Execution](#simulation-execution)
   - [Data Analysis](#data-analysis)
   - [Real Robot Integration](#real-robot-integration)
+- [OSMO Workflow](#osmo-workflow)
 - [Data Format](#data-format)
   - [Motion Files](#motion-files)
   - [Simulation Output](#simulation-output)
@@ -180,6 +181,32 @@ For detailed setup instructions, usage examples, and robot-specific configuratio
 
 - [UNITREE_REAL](docs/UNITREE_REAL.md) - Unitree G1 and H1-2 guide
 - [REALMAN_REAL](docs/REALMAN_REAL.md) - Realman WR75S guide
+
+## OSMO Workflow
+
+We have created an OSMO workflow for one-click submission of simulation and analysis tasks. The results will be collected in the form of OSMO datasets. Please refer to the OSMO documentation to onboard OSMO, and set up the NGC registry credentials:
+
+```bash
+osmo credential set my-ngc-cred \
+    --type REGISTRY \
+    --payload registry=nvcr.io \
+    username='$oauthtoken' \
+    auth=<ngc_api_key>
+```
+
+The workflow can be submitted using the following command:
+
+```bash
+osmo workflow submit osmo_workflow.yaml
+```
+
+The results can be downloaded using the following command:
+
+```bash
+osmo dataset download sage ./
+```
+
+> **Note:** The `osmo_workflow.yaml` file is configured to run simulations for all 3 robots (h1_2, g1, wr75s) with all AMASS motion files on the A40 node of the OSMO platform. If necessary, you can modify this configuration file to suit different resource requirements or to run a subset of robots/motion files.
 
 ## Data Format
 
