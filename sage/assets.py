@@ -49,6 +49,13 @@ ROBOT_CONFIGS = {
         "default_kd": 200.0,
         "default_control_freq": 20,
     },
+    "so101": {
+        "usd_path": "assets/so101/SO-ARM101-USD.usd",
+        "offset": (0.0, 0.0, 0.00),
+        "default_kp": 1000.0,
+        "default_kd": 200.0,
+        "default_control_freq": 20,
+    }
 }
 
 
