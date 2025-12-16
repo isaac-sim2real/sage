@@ -83,13 +83,24 @@ JOINT_OFFSETS_RAD = {
 # Joint direction inversion: True = negate radian value before conversion
 # Set to True if joint moves opposite to simulation direction
 JOINT_INVERTED = {
-    "shoulder_pan": False,
+    "shoulder_pan": True,
     "shoulder_lift": False,
-    "elbow_flex": True,   # Elbow appears inverted
-    "wrist_flex": False,
-    "wrist_roll": False,
+    "elbow_flex": True,
+    "wrist_flex": True,
+    "wrist_roll": True,
     "gripper": False,
 }
+
+# Packed/home position to return to after motion (radians, gripper 0-1)
+# shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll, gripper
+PACKED_POSITION = np.array([
+    0.010,   # shoulder_pan: 0.6°
+    -1.803,  # shoulder_lift: -103.3°
+    -1.693,  # elbow_flex: -97.0°
+    1.669,   # wrist_flex: 95.6°
+    0.019,   # wrist_roll: 1.1°
+    0.506,   # gripper: 50.6%
+])
 
 
 def interpolate_motion(seq, original_freq, target_freq):
@@ -493,6 +504,12 @@ class So101Collector:
                 print(f"  Frame {i}/{n_frames} | Loop: {loop_elapsed*1000:.1f}ms | Sleep: {sleep_time*1000:.1f}ms")
 
         print(f"Motion completed: {n_frames} frames in {time.monotonic() - self.start_monotonic:.2f}s")
+        
+        # Return to packed/home position
+        print("Returning to packed position...")
+        self.move_to_position(PACKED_POSITION, duration=3.0)
+        print("Returned to packed position.")
+        
         return command_times, command_positions
 
     def close(self):
