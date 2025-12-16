@@ -80,6 +80,17 @@ JOINT_OFFSETS_RAD = {
     "gripper": 0.0,  # Gripper uses 0-1 scale, not radians
 }
 
+# Joint direction inversion: True = negate radian value before conversion
+# Set to True if joint moves opposite to simulation direction
+JOINT_INVERTED = {
+    "shoulder_pan": False,
+    "shoulder_lift": False,
+    "elbow_flex": True,   # Elbow appears inverted
+    "wrist_flex": False,
+    "wrist_roll": False,
+    "gripper": False,
+}
+
 
 def interpolate_motion(seq, original_freq, target_freq):
     """Interpolate motion sequence to target frequency."""
@@ -152,9 +163,10 @@ class So101Collector:
         
         # Load calibration from cache
         calibration = None
+        self.calib_data = None  # Store raw calibration for radian→encoder conversion
         if CALIBRATION_PATH.exists():
             with open(CALIBRATION_PATH) as f:
-                calib_data = json.load(f)
+                self.calib_data = json.load(f)
             calibration = {
                 name: MotorCalibration(
                     id=data["id"],
@@ -163,10 +175,10 @@ class So101Collector:
                     range_min=data["range_min"],
                     range_max=data["range_max"],
                 )
-                for name, data in calib_data.items()
+                for name, data in self.calib_data.items()
             }
         else:
-            print(f"[WARNING] Calibration not found at {CALIBRATION_PATH}")
+            raise RuntimeError(f"Calibration not found at {CALIBRATION_PATH}")
         
         # Initialize motor bus with DEGREES mode for arm joints, RANGE_0_100 for gripper
         motors = {}
@@ -202,8 +214,8 @@ class So101Collector:
         Read current joint state from all motors.
 
         Returns:
-            positions: Joint positions in radians
-            velocities: Joint velocities in rad/s
+            positions: Joint positions in radians (gripper: 0-1 normalized)
+            velocities: Joint velocities (raw)
             currents: Motor currents (proxy for torque)
         """
         positions = []
@@ -211,14 +223,19 @@ class So101Collector:
         currents = []
 
         for name in self.joint_names:
-            # Read position (degrees for arm, 0-100 for gripper)
-            pos = self.bus.read("Present_Position", name)
-            # Convert degrees to radians for arm joints
+            # Read raw encoder position
+            encoder_pos = self.bus.read("Present_Position", name, normalize=False)
+            
             if name != "gripper":
-                pos = np.deg2rad(pos)
+                # Convert encoder to radians
+                pos = self.encoder_to_rad(encoder_pos, name)
             else:
-                # Gripper: 0-100 -> 0-1 normalized
-                pos = pos / 100.0
+                # Gripper: encoder -> 0-1 normalized
+                calib = self.calib_data[name]
+                range_min = calib["range_min"]
+                range_max = calib["range_max"]
+                pos = (encoder_pos - range_min) / (range_max - range_min)
+                pos = np.clip(pos, 0.0, 1.0)
             positions.append(pos)
 
             # Read velocity
@@ -231,6 +248,62 @@ class So101Collector:
 
         return np.array(positions), np.array(velocities), np.array(currents)
 
+    def rad_to_encoder(self, radian, joint_name):
+        """
+        Convert radian value to raw encoder position.
+        
+        Assumes radian 0 = center of calibrated range.
+        STS3215: 4096 ticks = 360 degrees = 2π radians
+        
+        Args:
+            radian: Joint angle in radians
+            joint_name: Name of the joint
+            
+        Returns:
+            Raw encoder value (int)
+        """
+        # Apply inversion if configured
+        if JOINT_INVERTED.get(joint_name, False):
+            radian = -radian
+        
+        calib = self.calib_data[joint_name]
+        range_min = calib["range_min"]
+        range_max = calib["range_max"]
+        mid = (range_min + range_max) / 2
+        
+        # Convert: 1 radian = 4096 / (2π) encoder ticks
+        TICKS_PER_RADIAN = 4096 / (2 * np.pi)
+        encoder = radian * TICKS_PER_RADIAN + mid
+        
+        # Clamp to calibrated range
+        encoder = np.clip(encoder, range_min, range_max)
+        return int(encoder)
+    
+    def encoder_to_rad(self, encoder, joint_name):
+        """
+        Convert raw encoder position to radian value.
+        
+        Args:
+            encoder: Raw encoder value
+            joint_name: Name of the joint
+            
+        Returns:
+            Joint angle in radians
+        """
+        calib = self.calib_data[joint_name]
+        range_min = calib["range_min"]
+        range_max = calib["range_max"]
+        mid = (range_min + range_max) / 2
+        
+        TICKS_PER_RADIAN = 4096 / (2 * np.pi)
+        radian = (encoder - mid) / TICKS_PER_RADIAN
+        
+        # Apply inversion if configured
+        if JOINT_INVERTED.get(joint_name, False):
+            radian = -radian
+        
+        return radian
+
     def write_positions(self, positions):
         """
         Write goal positions to all motors.
@@ -240,12 +313,17 @@ class So101Collector:
         """
         for i, name in enumerate(self.joint_names):
             if name != "gripper":
-                # Convert radians to degrees for arm joints
-                val = np.rad2deg(positions[i])
+                # Convert radians to raw encoder value
+                encoder_val = self.rad_to_encoder(positions[i], name)
             else:
-                # Gripper: 0-1 normalized -> 0-100
-                val = positions[i] * 100.0
-            self.bus.write("Goal_Position", name, val)
+                # Gripper: 0-1 normalized -> encoder range
+                calib = self.calib_data[name]
+                range_min = calib["range_min"]
+                range_max = calib["range_max"]
+                encoder_val = int(positions[i] * (range_max - range_min) + range_min)
+                encoder_val = np.clip(encoder_val, range_min, range_max)
+            
+            self.bus.write("Goal_Position", name, encoder_val, normalize=False)
 
     def enable_torque(self):
         """Enable torque on all motors."""
@@ -293,28 +371,40 @@ class So101Collector:
         """
         current_pos, _, _ = self.read_state()
         
+        # Also read raw encoder values for debugging
+        raw_encoders = []
+        for name in self.joint_names:
+            raw = self.bus.read("Present_Position", name, normalize=False)
+            raw_encoders.append(raw)
+        
         print("\n=== SAFETY CHECK ===")
-        print(f"{'Joint':<15} {'Current':>10} {'Target':>10} {'Diff':>10}")
-        print("-" * 50)
+        print(f"{'Joint':<15} {'Cur(deg)':>10} {'Tgt(deg)':>10} {'Diff':>8} {'CurEnc':>8} {'TgtEnc':>8} {'Range'}")
+        print("-" * 90)
         
         max_diff = 0.0
         for i, name in enumerate(self.joint_names):
+            calib = self.calib_data[name]
+            range_min = calib["range_min"]
+            range_max = calib["range_max"]
+            
             if name == "gripper":
                 cur_val = current_pos[i] * 100  # 0-100 scale
                 tgt_val = target_positions[i] * 100
                 diff = abs(cur_val - tgt_val)
                 unit = "%"
+                tgt_enc = int(target_positions[i] * (range_max - range_min) + range_min)
             else:
                 cur_val = np.rad2deg(current_pos[i])
                 tgt_val = np.rad2deg(target_positions[i])
                 diff = abs(cur_val - tgt_val)
                 max_diff = max(max_diff, diff)
                 unit = "°"
+                tgt_enc = self.rad_to_encoder(target_positions[i], name)
             
-            warning = " WARNING" if diff > max_diff_deg else ""
-            print(f"{name:<15} {cur_val:>9.1f}{unit} {tgt_val:>9.1f}{unit} {diff:>9.1f}{unit}{warning}")
+            warning = " WARN" if diff > max_diff_deg else ""
+            print(f"{name:<15} {cur_val:>9.1f}{unit} {tgt_val:>9.1f}{unit} {diff:>7.1f}{unit} {raw_encoders[i]:>8} {tgt_enc:>8} [{range_min}-{range_max}]{warning}")
         
-        print("-" * 50)
+        print("-" * 90)
         
         if max_diff > max_diff_deg:
             print(f"\nWARNING: Max joint difference is {max_diff:.1f}° (threshold: {max_diff_deg}°)")
@@ -361,6 +451,14 @@ class So101Collector:
         print(f"Moving to start position...")
         self.move_to_position(motion_seq[0], duration=3.0)
         time.sleep(0.5)
+        
+        # Wait for user confirmation before starting motion
+        print("\n=== READY TO START MOTION ===")
+        print(f"Motion: {n_frames} frames at {control_freq}Hz (slowdown: {slowdown_factor}x)")
+        response = input("Press ENTER to start motion, or 'q' to quit: ").strip().lower()
+        if response == 'q':
+            print("Motion cancelled by user.")
+            return [], []
 
         print(f"Starting motion execution: {n_frames} frames at {control_freq}Hz")
         self.start_monotonic = time.monotonic()
