@@ -1,4 +1,5 @@
 matplotlib
+lerobot
 # Core dependencies for SAGE (Sim2Real Actuator Gap Estimator)
 numpy
 pandas>=1.3.0
