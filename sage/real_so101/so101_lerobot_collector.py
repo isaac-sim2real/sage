@@ -590,7 +590,7 @@ def so101_collector_main(
     output_dir,
     port="/dev/ttyACM1",
     control_freq=50,
-    slowdown_factor=2,
+    slowdown_factor=1,
 ):
     """
     Main function to collect motion data from SO-101.
