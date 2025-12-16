@@ -66,7 +66,7 @@ SO101_MOTOR_IDS = {
 }
 
 # Calibration cache path
-CALIBRATION_PATH = Path.home() / ".cache/huggingface/lerobot/calibration/robots/so101_follower/my_awesome_follower_arm.json"
+CALIBRATION_PATH = Path.home() / ".cache/huggingface/lerobot/calibration/robots/so101_follower/orange.json"
 
 # Joint offset from simulation coordinates to robot coordinates (in radians)
 # Set these by positioning robot at simulation's zero pose and reading actual positions
