@@ -83,23 +83,23 @@ JOINT_OFFSETS_RAD = {
 # Joint direction inversion: True = negate radian value before conversion
 # Set to True if joint moves opposite to simulation direction
 JOINT_INVERTED = {
-    "shoulder_pan": True,
+    "shoulder_pan": False,
     "shoulder_lift": False,
-    "elbow_flex": True,
-    "wrist_flex": True,
-    "wrist_roll": True,
+    "elbow_flex": False,
+    "wrist_flex": False,
+    "wrist_roll": False,
     "gripper": False,
 }
 
 # Packed/home position to return to after motion (radians, gripper 0-1)
 # shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll, gripper
 PACKED_POSITION = np.array([
-    0.010,   # shoulder_pan: 0.6°
-    -1.803,  # shoulder_lift: -103.3°
-    -1.693,  # elbow_flex: -97.0°
-    1.669,   # wrist_flex: 95.6°
-    0.019,   # wrist_roll: 1.1°
-    0.506,   # gripper: 50.6%
+    0.0,    # shoulder_pan: 0°
+    -1.8,   # shoulder_lift: ~-103°
+    1.7,    # elbow_flex: ~97°
+    -1.7,   # wrist_flex: ~-97°
+    0.0,    # wrist_roll: 0°
+    0.5,    # gripper: 50%
 ])
 
 
