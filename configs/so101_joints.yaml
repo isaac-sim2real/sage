@@ -1,0 +1,8 @@
+joints:
+  - Rotation
+  - Pitch
+  - Elbow
+  - Wrist_Pitch
+  - Wrist_Roll
+  - Jaw
+
