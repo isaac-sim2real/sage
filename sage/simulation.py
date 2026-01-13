@@ -7,6 +7,7 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 import csv
+import math
 import os
 from datetime import datetime
 from pathlib import Path
@@ -60,27 +61,30 @@ class JointMotionBenchmark:
         self.output_folder = args.output_folder
         self.fix_root = args.fix_root
         self.headless = args.headless
-        self.physics_freq = args.physics_freq
-        self.render_freq = args.render_freq
         self.original_control_freq = args.original_control_freq
         self.motion_speed_factor = args.motion_speed_factor
         self.solver_type = args.solver_type
-        self.control_freq = args.control_freq
         self.device = args.device
         self.kp = args.kp
         self.kd = args.kd
 
-        # Check frequency divisibility
-        if self.physics_freq % self.render_freq != 0:
-            raise ValueError("Physics frequency must be divisible by render frequency.")
-        if self.render_freq % self.control_freq != 0:
-            raise ValueError("Render frequency must be divisible by control frequency.")
+        # IsaacLab pattern: physics_dt, decimation, render_interval
+        self.dt = args.dt
+        self.decimation = args.decimation
+        self.render_interval = args.render_interval
 
-        # Initialize simulation parameters
-        self.physics_dt = 1.0 / self.physics_freq
-        self.render_dt = 1.0 / self.render_freq
-        self.control_dt = 1.0 / self.control_freq
-        self.divisor = self.render_freq // self.control_freq
+        if self.render_interval < self.decimation:
+            log_message(
+                f"The render interval ({self.render_interval}) is smaller than the decimation "
+                f"({self.decimation}). Multiple render calls will happen for each environment step."
+                "If this is not intended, set the render interval to be equal to the decimation."
+            )
+
+        log_message("Simulation configuration:")
+        log_message(f"  Device: {self.device}")
+        log_message(f"  Physics dt: {self.physics_dt:.4f}s")
+        log_message(f"  Control dt: {self.control_dt:.4f}s")
+        log_message(f"  Render dt: {self.render_dt:.4f}s")
 
         # Load valid joint names from config file
         self.set_valid_joints = False
@@ -89,6 +93,25 @@ class JointMotionBenchmark:
 
         # Initialize simulation environment
         self._setup_simulation()
+
+        # Initialize counter for simulation steps
+        self.benchmark_step_counter = 0
+
+    @property
+    def physics_dt(self):
+        return self.dt
+
+    @property
+    def control_dt(self):
+        return self.dt * self.decimation
+
+    @property
+    def control_freq(self):
+        return 1.0 / self.control_dt
+
+    @property
+    def render_dt(self):
+        return self.dt * self.render_interval
 
     def _load_valid_joints(self):
         """Load valid joint names from valid_joints_file"""
@@ -113,7 +136,7 @@ class JointMotionBenchmark:
         # Create simulation context
         sim_cfg = sim_utils.SimulationCfg(
             dt=self.physics_dt,
-            render_interval=int(self.render_dt / self.physics_dt),
+            render_interval=self.render_interval,
             device=self.device,
             physx=sim_utils.PhysxCfg(
                 solver_type=self.solver_type,
@@ -147,6 +170,8 @@ class JointMotionBenchmark:
 
         # Reset simulation
         self.sim.reset()
+        self.sim.step()
+        self.robot.update(self.physics_dt)
 
         log_message(f"Loaded robot {self.robot_name}")
 
@@ -334,12 +359,35 @@ class JointMotionBenchmark:
                 ["STATE_MOTOR", time, actual_positions.tolist(), actual_velocities.tolist(), actual_efforts.tolist()]
             )
 
+    def step(self, action, joint_indices=None):
+        """Step the simulation"""
+
+        is_rendering = self.sim.has_gui() or self.sim.has_rtx_sensors()
+
+        joint_pos_target = self.robot.data.joint_pos.clone()
+
+        if joint_indices is not None:
+            joint_pos_target[0, joint_indices] = action
+        else:
+            joint_pos_target[0, :] = action
+
+        for _ in range(self.decimation):
+            self.robot.set_joint_position_target(joint_pos_target)
+            self.robot.write_data_to_sim()
+            self.sim.step(render=False)
+
+            if self.benchmark_step_counter % self.render_interval == 0 and is_rendering:
+                self.sim.render()
+            self.robot.update(self.physics_dt)
+
+        self.benchmark_step_counter += 1
+
     def run_benchmark(self):
         """Run the benchmark for the current motion file"""
         num_timesteps = self.joint_angles.shape[1]
 
-        log_message(f"Physics dt: {self.physics_dt}, Rendering dt: {self.physics_dt * self.divisor}")
-        log_message(f"Expected log interval: {self.physics_dt * self.divisor}")
+        log_message(f"Physics dt: {self.physics_dt}, Rendering dt: {self.render_dt}")
+        log_message(f"Expected log interval: {self.control_dt}")
 
         # Reset simulation
         self.sim.reset()
@@ -347,9 +395,13 @@ class JointMotionBenchmark:
         # Apply kp/kd overrides if provided
         self._apply_gain_overrides()
 
+        # reset counter for benchmark steps
+        self.benchmark_step_counter = 0
+
         # Buffer to the motion start position
         BUFFER_TIME = 5.0
-        buffer_control_steps = int(BUFFER_TIME / self.control_dt)
+        buffer_control_steps = math.ceil(BUFFER_TIME / self.control_dt)
+        buffer_start_time = self.sim.current_time
 
         # Get initial joint positions and motion start positions
         initial_joint_positions = self.robot.data.joint_pos[0, self.joint_indices]
@@ -358,47 +410,32 @@ class JointMotionBenchmark:
         # Generate interpolated positions for smooth initialization
         log_message(f"Starting initialization phase with {BUFFER_TIME}s buffer...")
 
-        for buffer_counter in range(buffer_control_steps * self.divisor):
-            control_step = int(buffer_counter / self.divisor)
+        for buffer_step in range(buffer_control_steps):
+            alpha = buffer_step / buffer_control_steps
+            interpolated_positions = (1 - alpha) * initial_joint_positions + alpha * motion_start_positions
 
-            # Update joint positions at control frequency
-            if buffer_counter % self.divisor == 0:
-                # Linear interpolation between initial and target positions
-                alpha = control_step / buffer_control_steps
-                interpolated_positions = (1 - alpha) * initial_joint_positions + alpha * motion_start_positions
+            self.step(interpolated_positions, self.joint_indices)
 
-                # Set interpolated positions
-                joint_pos_target = self.robot.data.joint_pos.clone()
-                joint_pos_target[0, self.joint_indices] = interpolated_positions
-                self.robot.set_joint_position_target(joint_pos_target)
-                self.robot.write_data_to_sim()
-
-            self.sim.step()
-            self.robot.update(self.physics_dt)
         buffer_end_time = self.sim.current_time
+        buffer_duration = buffer_end_time - buffer_start_time
 
         log_message(
-            f"Buffer completed in {BUFFER_TIME:.2f} seconds, {buffer_counter+1} physics steps. "
+            f"Buffer completed in {buffer_duration:.2f} seconds, {buffer_step} physics steps. "
             f"Joint positions: {self.robot.data.joint_pos[0, self.joint_indices].cpu().numpy().tolist()}"
         )
 
         log_message("Initialization complete. Starting main motion...")
 
-        log_message(
-            f"physics_dt: {self.physics_dt} render_dt: {self.render_dt} "
-            f"control_dt: {self.control_dt} divisor: {self.divisor}"
-        )
-
         # Main motion execution
-        for counter in range(num_timesteps * self.divisor):
-            index = int(counter / self.divisor)
+        for counter in range(num_timesteps * self.decimation):
+            index = int(counter / self.decimation)
             adjusted_time = self.sim.current_time - buffer_end_time
 
             if index >= num_timesteps:
                 break
 
             # Set joint positions
-            if counter % self.divisor == 0:
+            if counter % self.decimation == 0:
                 joint_pos_target = self.robot.data.joint_pos.clone()
                 target_pos = self.joint_angles[:, index]
                 joint_pos_target[0, self.joint_indices] = target_pos
@@ -424,7 +461,9 @@ class JointMotionBenchmark:
                 actual_efforts=actual_efforts.cpu().numpy(),
             )
 
-            self.sim.step()
+            # Step simulation - render only at render_interval when not headless
+            # The render_interval is automatically respected by the SimulationContext
+            self.sim.step(render=not self.headless)
             self.robot.update(self.physics_dt)
 
         log_message(

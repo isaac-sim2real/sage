@@ -32,9 +32,9 @@ parser.add_argument(
 parser.add_argument("--valid-joints-file", type=str, required=False, default=None, help="Path to valid joints file")
 parser.add_argument("--output-folder", type=str, required=True, help="Path to output folder")
 parser.add_argument("--fix-root", action="store_true", default=False, help="Fix root joint")
-parser.add_argument("--physics-freq", type=int, default=200, help="Physics timestep frequency")
-parser.add_argument("--render-freq", type=int, default=200, help="Render timestep frequency")
-parser.add_argument("--control-freq", type=int, default=50, required=True, help="Control frequency")
+parser.add_argument("--dt", type=float, default=0.005, help="Physics dt in seconds")
+parser.add_argument("--decimation", type=int, default=4, help="Number of physics steps per control step")
+parser.add_argument("--render-interval", type=int, default=4, help="Number of physics steps per render step")
 parser.add_argument(
     "--original-control-freq", type=int, default=None, help="Original control frequency of motion files"
 )
