@@ -312,8 +312,9 @@ class JointMotionBenchmark:
                     if values[valid_idx]:  # Only convert non-empty strings
                         joint_angles[i].append(float(values[valid_idx]))
 
-        # Convert to tensor (num_joints, num_timesteps)
-        joint_angles = torch.tensor(joint_angles, dtype=torch.float, device=self.device)
+        # Convert to tensor
+        joint_angles = torch.tensor(joint_angles, dtype=torch.float, device=self.device)  # (num_joints, num_timesteps)
+        joint_angles = joint_angles.T  # Shape: (num_timesteps, num_joints)
 
         # Resample if needed
         if self.original_control_freq is not None and self.original_control_freq != self.control_freq:
@@ -324,7 +325,8 @@ class JointMotionBenchmark:
     def _resample_motion(self, joint_angles):
         """Resample motion data to match target control frequency and apply speed factor"""
         # Calculate original and scaled duration
-        old_len = joint_angles.shape[1]
+        # joint_angles shape: (num_timesteps, num_joints)
+        old_len = joint_angles.shape[0]
         original_duration = old_len / self.original_control_freq
         target_duration = original_duration / self.motion_speed_factor
 
@@ -338,11 +340,11 @@ class JointMotionBenchmark:
         )
 
         # Linear interpolation
-        # Reshape to (1, num_joints, old_len)
-        joint_angles = joint_angles.unsqueeze(0)
+        # Transpose to (num_joints, num_timesteps) then reshape to (1, num_joints, old_len)
+        joint_angles = joint_angles.T.unsqueeze(0)
         joint_angles = torch.nn.functional.interpolate(joint_angles, size=new_len, mode="linear", align_corners=True)
-        # Back to (num_joints, new_len)
-        joint_angles = joint_angles.squeeze(0)
+        # Back to (num_joints, new_len) then transpose to (num_timesteps, num_joints)
+        joint_angles = joint_angles.squeeze(0).T
 
         return joint_angles
 
@@ -385,7 +387,7 @@ class JointMotionBenchmark:
 
     def run_benchmark(self):
         """Run the benchmark for the current motion file"""
-        num_timesteps = self.joint_angles.shape[1]
+        num_timesteps = self.joint_angles.shape[0]
 
         log_message(f"Physics dt: {self.physics_dt}, Rendering dt: {self.render_dt}")
         log_message(f"Expected log interval: {self.control_dt}")
@@ -407,7 +409,7 @@ class JointMotionBenchmark:
 
         # Get initial joint positions and motion start positions
         initial_joint_positions = self.robot.data.joint_pos[0, self.joint_indices]
-        motion_start_positions = self.joint_angles[:, 0]
+        motion_start_positions = self.joint_angles[0, :]
 
         # Generate interpolated positions for smooth initialization
         log_message(f"Starting initialization phase with {BUFFER_TIME}s buffer...")
@@ -442,13 +444,13 @@ class JointMotionBenchmark:
             # Set joint positions
             if counter % self.decimation == 0:
                 joint_pos_target = self.robot.data.joint_pos.clone()
-                target_pos = self.joint_angles[:, index]
+                target_pos = self.joint_angles[index, :]
                 joint_pos_target[0, self.joint_indices] = target_pos
                 self.robot.set_joint_position_target(joint_pos_target)
                 self.robot.write_data_to_sim()
 
             # Get and log current state
-            command_positions = self.joint_angles[:, index]
+            command_positions = self.joint_angles[index, :]
             actual_positions = self.robot.data.joint_pos[0, self.joint_indices]
             actual_velocities = self.robot.data.joint_vel[0, self.joint_indices]
 
