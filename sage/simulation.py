@@ -362,17 +362,53 @@ class JointMotionBenchmark:
                 ["STATE_MOTOR", time, actual_positions.tolist(), actual_velocities.tolist(), actual_efforts.tolist()]
             )
 
-    def step(self, action, joint_indices=None):
-        """Step the simulation"""
+    def _log_current_state(self, action, joint_indices, time):
+        """Log the current state of the robot
+
+        Args:
+            action: Joint positions commanded
+            joint_indices: Indices of joints to log (None = all joints)
+            time: Simulation time for logging
+        """
+        # Get current state
+        if joint_indices is None:
+            num_dof = self.robot.data.joint_pos.shape[1]
+            joint_indices = list(range(num_dof))
+
+        actual_positions = self.robot.data.joint_pos[0, joint_indices]
+        actual_velocities = self.robot.data.joint_vel[0, joint_indices]
+
+        # Get link incoming joint forces
+        link_forces = self.robot.root_physx_view.get_link_incoming_joint_force()
+        actual_efforts = torch.norm(link_forces[0, joint_indices, -3:], dim=1)
+
+        self._log_state(
+            time=time,
+            command_positions=action.cpu().numpy(),
+            actual_positions=actual_positions.cpu().numpy(),
+            actual_velocities=actual_velocities.cpu().numpy(),
+            actual_efforts=actual_efforts.cpu().numpy(),
+        )
+
+    def step(self, action, joint_indices=None, log_state=False, time=None):
+        """Step the simulation
+
+        Args:
+            action: Joint positions to set
+            joint_indices: Indices of joints to control (None = all joints)
+            log_state: Whether to log the state after stepping
+            time: Simulation time for logging (required if log_state=True)
+        """
 
         is_rendering = self.sim.has_gui() or self.sim.has_rtx_sensors()
 
         joint_pos_target = self.robot.data.joint_pos.clone()
 
-        if joint_indices is not None:
-            joint_pos_target[0, joint_indices] = action
-        else:
-            joint_pos_target[0, :] = action
+        if joint_indices is None:
+            num_dof = self.robot.data.joint_pos.shape[1]
+            joint_indices = list(range(num_dof))
+
+        joint_pos_target[0, joint_indices] = action
 
         for _ in range(self.decimation):
             self.robot.set_joint_position_target(joint_pos_target)
@@ -385,9 +421,14 @@ class JointMotionBenchmark:
 
         self.benchmark_step_counter += 1
 
+        # Log state if requested
+        if log_state:
+            if time is None:
+                raise ValueError("time must be provided when log_state=True")
+            self._log_current_state(action, joint_indices, time)
+
     def run_benchmark(self):
         """Run the benchmark for the current motion file"""
-        num_timesteps = self.joint_angles.shape[0]
 
         log_message(f"Physics dt: {self.physics_dt}, Rendering dt: {self.render_dt}")
         log_message(f"Expected log interval: {self.control_dt}")
@@ -433,50 +474,19 @@ class JointMotionBenchmark:
         log_message("Initialization complete. Starting main motion...")
 
         # Main motion execution
+        num_timesteps = self.joint_angles.shape[0]
+
         motion_start_wall_time = time.perf_counter()
-        for counter in range(num_timesteps * self.decimation):
-            index = int(counter / self.decimation)
+        for index in range(num_timesteps):
             adjusted_time = self.sim.current_time - buffer_end_time
+            target_pos = self.joint_angles[index, :]
 
-            if index >= num_timesteps:
-                break
-
-            # Set joint positions
-            if counter % self.decimation == 0:
-                joint_pos_target = self.robot.data.joint_pos.clone()
-                target_pos = self.joint_angles[index, :]
-                joint_pos_target[0, self.joint_indices] = target_pos
-                self.robot.set_joint_position_target(joint_pos_target)
-                self.robot.write_data_to_sim()
-
-            # Get and log current state
-            command_positions = self.joint_angles[index, :]
-            actual_positions = self.robot.data.joint_pos[0, self.joint_indices]
-            actual_velocities = self.robot.data.joint_vel[0, self.joint_indices]
-
-            # Get link incoming joint forces
-            # 6D, including the active and passive components of the force
-            link_forces = self.robot.root_physx_view.get_link_incoming_joint_force()
-            # Extract torque components (last 3 elements of 6D force) and compute magnitude
-            actual_efforts = torch.norm(link_forces[0, self.joint_indices, -3:], dim=1)
-
-            self._log_state(
-                time=adjusted_time,
-                command_positions=command_positions.cpu().numpy(),
-                actual_positions=actual_positions.cpu().numpy(),
-                actual_velocities=actual_velocities.cpu().numpy(),
-                actual_efforts=actual_efforts.cpu().numpy(),
-            )
-
-            # Step simulation - render only at render_interval when not headless
-            # The render_interval is automatically respected by the SimulationContext
-            self.sim.step(render=not self.headless)
-            self.robot.update(self.physics_dt)
+            self.step(action=target_pos, joint_indices=self.joint_indices, log_state=True, time=adjusted_time)
 
         motion_wall_time = time.perf_counter() - motion_start_wall_time
         motion_sim_time = self.sim.current_time - buffer_end_time
         log_message(
-            f"Motion completed in {counter+1} physics steps. "
+            f"Motion completed in {num_timesteps} physics steps. "
             f"Sim time: {motion_sim_time:.2f}s, Wall time: {motion_wall_time:.2f}s. "
             f"Joint positions: {self.robot.data.joint_pos[0, self.joint_indices].cpu().numpy().tolist()}"
         )
