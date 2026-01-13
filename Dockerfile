@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/isaac-lab:2.2.0
+FROM nvcr.io/nvidia/isaac-lab:2.3.0
 
 COPY requirements.txt /tmp/requirements.txt
 RUN /workspace/isaaclab/_isaac_sim/python.sh -m \
