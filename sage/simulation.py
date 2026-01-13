@@ -9,6 +9,7 @@
 import csv
 import math
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -402,6 +403,7 @@ class JointMotionBenchmark:
         BUFFER_TIME = 5.0
         buffer_control_steps = math.ceil(BUFFER_TIME / self.control_dt)
         buffer_start_time = self.sim.current_time
+        buffer_start_wall_time = time.perf_counter()
 
         # Get initial joint positions and motion start positions
         initial_joint_positions = self.robot.data.joint_pos[0, self.joint_indices]
@@ -418,15 +420,18 @@ class JointMotionBenchmark:
 
         buffer_end_time = self.sim.current_time
         buffer_duration = buffer_end_time - buffer_start_time
+        buffer_wall_time = time.perf_counter() - buffer_start_wall_time
 
         log_message(
             f"Buffer completed in {buffer_duration:.2f} seconds, {buffer_step} physics steps. "
+            f"Wall time: {buffer_wall_time:.2f}s. "
             f"Joint positions: {self.robot.data.joint_pos[0, self.joint_indices].cpu().numpy().tolist()}"
         )
 
         log_message("Initialization complete. Starting main motion...")
 
         # Main motion execution
+        motion_start_wall_time = time.perf_counter()
         for counter in range(num_timesteps * self.decimation):
             index = int(counter / self.decimation)
             adjusted_time = self.sim.current_time - buffer_end_time
@@ -466,8 +471,11 @@ class JointMotionBenchmark:
             self.sim.step(render=not self.headless)
             self.robot.update(self.physics_dt)
 
+        motion_wall_time = time.perf_counter() - motion_start_wall_time
+        motion_sim_time = self.sim.current_time - buffer_end_time
         log_message(
             f"Motion completed in {counter+1} physics steps. "
+            f"Sim time: {motion_sim_time:.2f}s, Wall time: {motion_wall_time:.2f}s. "
             f"Joint positions: {self.robot.data.joint_pos[0, self.joint_indices].cpu().numpy().tolist()}"
         )
 
