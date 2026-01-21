@@ -134,6 +134,8 @@ logs/
 *.usd
 *.usda
 *.usdc
+scripts/gen_sysid_motions.py
+scripts/actual_sysid_file_plots.png
 
 # Temporary files
 tmp/
