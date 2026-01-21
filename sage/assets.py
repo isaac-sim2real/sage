@@ -55,7 +55,7 @@ ROBOT_CONFIGS = {
         "default_kp": 1000.0,
         "default_kd": 200.0,
         "default_control_freq": 20,
-    }
+    },
 }
 
 
