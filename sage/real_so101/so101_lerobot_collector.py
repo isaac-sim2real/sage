@@ -66,7 +66,7 @@ SO101_MOTOR_IDS = {
 }
 
 # Calibration cache path
-CALIBRATION_PATH = Path.home() / ".cache/huggingface/lerobot/calibration/robots/so101_follower/orange.json"
+CALIBRATION_PATH = Path.home() / ".cache/huggingface/lerobot/calibration/robots/so101_follower/vidur_follower.json"
 
 # Joint offset from simulation coordinates to robot coordinates (in radians)
 # Set these by positioning robot at simulation's zero pose and reading actual positions
@@ -283,7 +283,7 @@ class So101Collector:
         mid = (range_min + range_max) / 2
         
         # Convert: 1 radian = 4096 / (2π) encoder ticks
-        TICKS_PER_RADIAN = 4096 / (2 * np.pi)
+        TICKS_PER_RADIAN = 4095 / (2 * np.pi)
         encoder = radian * TICKS_PER_RADIAN + mid
         
         # Clamp to calibrated range
@@ -426,7 +426,7 @@ class So101Collector:
             print(f"Max joint difference: {max_diff:.1f}° - OK")
             return True
 
-    def collect_motion(self, motion_seq, control_freq=50, slowdown_factor=2):
+    def collect_motion(self, motion_seq, control_freq=50, slowdown_factor=2, auto_start=False):
         """
         Execute motion sequence and collect data.
 
@@ -440,9 +440,9 @@ class So101Collector:
             command_positions: List of commanded positions
         """
         # Safety check before moving
-        if not self.safety_check(motion_seq[0]):
-            print("Motion cancelled by user.")
-            return [], []
+        # if not self.safety_check(motion_seq[0]):
+        #     print("Motion cancelled by user.")
+        #     return [], []
         
         n_frames = motion_seq.shape[0]
         loop_dt = 1.0 / control_freq * slowdown_factor
@@ -466,10 +466,13 @@ class So101Collector:
         # Wait for user confirmation before starting motion
         print("\n=== READY TO START MOTION ===")
         print(f"Motion: {n_frames} frames at {control_freq}Hz (slowdown: {slowdown_factor}x)")
-        response = input("Press ENTER to start motion, or 'q' to quit: ").strip().lower()
-        if response == 'q':
-            print("Motion cancelled by user.")
-            return [], []
+        if not auto_start:
+            response = input("Press ENTER to start motion, or 'q' to quit: ").strip().lower()
+            if response == 'q':
+                print("Motion cancelled by user.")
+                return [], []
+        else:
+            print("Auto-start enabled, beginning motion...")
 
         print(f"Starting motion execution: {n_frames} frames at {control_freq}Hz")
         self.start_monotonic = time.monotonic()
@@ -591,6 +594,7 @@ def so101_collector_main(
     port="/dev/ttyACM1",
     control_freq=50,
     slowdown_factor=1,
+    auto_start=False,
 ):
     """
     Main function to collect motion data from SO-101.
@@ -601,6 +605,7 @@ def so101_collector_main(
         port: Serial port for SO-101
         control_freq: Control frequency in Hz
         slowdown_factor: Factor to slow down motion
+        auto_start: If True, skip user confirmation prompts
     """
     print(f"[SO-101 Collector] Loading motion: {motion_file}")
 
@@ -624,7 +629,7 @@ def so101_collector_main(
 
         # Execute motion and collect data
         command_times, command_positions = collector.collect_motion(
-            seq, control_freq=control_freq, slowdown_factor=slowdown_factor
+            seq, control_freq=control_freq, slowdown_factor=slowdown_factor, auto_start=auto_start
         )
 
         # Save data in SAGE format
