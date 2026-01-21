@@ -7,6 +7,7 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 import argparse
+import glob
 import os
 import time
 
@@ -28,7 +29,18 @@ def run_motion(robot_name, motion_file, output_dir, auto_start=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Run motion files on a robot and collect data.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run specific motion files:
+  python scripts/run_real.py --robot-name so101 --motion-files custom/file1.txt custom/file2.txt --output-folder output
+
+  # Run all motion files in a folder:
+  python scripts/run_real.py --robot-name so101 --motion-folder custom --output-folder output --auto-start
+        """
+    )
     parser.add_argument(
         "--robot-name", 
         action="store", 
@@ -42,7 +54,14 @@ if __name__ == "__main__":
         type=str, 
         nargs="+",
         help="One or more motion files (relative to motion_files/<robot>/)", 
-        required=True
+        default=[]
+    )
+    parser.add_argument(
+        "--motion-folder",
+        action="store",
+        type=str,
+        help="Run all .txt motion files in this folder (relative to motion_files/<robot>/)",
+        default=None
     )
     parser.add_argument(
         "--output-folder", 
@@ -64,6 +83,10 @@ if __name__ == "__main__":
         help="Automatically start motion without waiting for user confirmation"
     )
     args = parser.parse_args()
+    
+    # Validate that at least one motion source is provided
+    if not args.motion_files and not args.motion_folder:
+        parser.error("You must provide either --motion-files or --motion-folder")
 
     home_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
@@ -75,10 +98,37 @@ if __name__ == "__main__":
         motion_subfolder = "amass"
         output_subfolder = "amass"
 
-    total_runs = len(args.motion_files) * args.repeats
+    # Collect motion files
+    motion_files = list(args.motion_files)  # Start with explicitly listed files
+    
+    # Add files from folder if specified
+    if args.motion_folder:
+        folder_path = os.path.join(home_dir, "motion_files", args.robot_name, args.motion_folder)
+        if not os.path.isdir(folder_path):
+            print(f"Error: Motion folder not found: {folder_path}")
+            exit(1)
+        
+        # Find all .txt files in the folder
+        txt_files = sorted(glob.glob(os.path.join(folder_path, "*.txt")))
+        
+        if not txt_files:
+            print(f"Warning: No .txt files found in {folder_path}")
+        else:
+            # Convert to relative paths (relative to motion_files/<robot>/)
+            for txt_file in txt_files:
+                rel_path = os.path.relpath(txt_file, os.path.join(home_dir, "motion_files", args.robot_name))
+                if rel_path not in motion_files:  # Avoid duplicates
+                    motion_files.append(rel_path)
+            print(f"Found {len(txt_files)} motion files in {args.motion_folder}/")
+    
+    if not motion_files:
+        print("Error: No motion files to run")
+        exit(1)
+
+    total_runs = len(motion_files) * args.repeats
     current_run = 0
 
-    for motion_filename in args.motion_files:
+    for motion_filename in motion_files:
         # Get motion name without extension for folder naming
         motion_name = os.path.splitext(os.path.basename(motion_filename))[0]
         
