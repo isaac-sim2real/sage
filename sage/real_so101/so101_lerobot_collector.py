@@ -666,27 +666,3 @@ def so101_collector_main(
 
     finally:
         collector.close()
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="SO-101 motion collector")
-    parser.add_argument("--motion-file", type=str, required=True, help="Path to motion file")
-    parser.add_argument("--output-dir", type=str, required=True, help="Output directory")
-    parser.add_argument("--robot-port", type=str, default="/dev/ttyACM0", help="Serial port")
-    parser.add_argument("--robot-type", type=str, default="so101_follower", help="Robot type for calibration path")
-    parser.add_argument("--robot-id", type=str, default="my_awesome_follower_arm", help="Robot ID for calibration path")
-    parser.add_argument("--control-freq", type=int, default=50, help="Control frequency Hz")
-    parser.add_argument("--slowdown", type=int, default=1, help="Slowdown factor")
-    args = parser.parse_args()
-
-    so101_collector_main(
-        motion_file=args.motion_file,
-        output_dir=args.output_dir,
-        robot_port=args.robot_port,
-        robot_type=args.robot_type,
-        robot_id=args.robot_id,
-        control_freq=args.control_freq,
-        slowdown_factor=args.slowdown,
-    )
