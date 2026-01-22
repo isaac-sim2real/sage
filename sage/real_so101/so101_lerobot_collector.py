@@ -66,8 +66,8 @@ SO101_MOTOR_IDS = {
     "gripper": 6,
 }
 
-# Calibration cache path
-CALIBRATION_PATH = Path.home() / ".cache/huggingface/lerobot/calibration/robots/so101_follower/vidur_follower.json"
+# Calibration cache path prefix
+CALIBRATION_PATH_PREFIX = Path.home() / ".cache/huggingface/lerobot/calibration/robots/"
 
 # Joint offset from simulation coordinates to robot coordinates (in radians)
 # Set these by positioning robot at simulation's zero pose and reading actual positions
@@ -149,12 +149,13 @@ class So101Collector:
     Handles motion playback and data logging in SAGE-compatible format.
     """
 
-    def __init__(self, port="/dev/ttyACM2", baudrate=1000000):
+    def __init__(self, port, calibration_path, baudrate=1000000):
         """
         Initialize SO-101 collector.
 
         Args:
             port: Serial port for Feetech bus
+            calibration_path: Path to calibration JSON file
             baudrate: Communication baudrate (default 1000000)
         """
         if not LEROBOT_AVAILABLE:
@@ -178,8 +179,11 @@ class So101Collector:
         # Load calibration from cache
         calibration = None
         self.calib_data = None  # Store raw calibration for radian→encoder conversion
-        if CALIBRATION_PATH.exists():
-            with open(CALIBRATION_PATH) as f:
+        if calibration_path is None:
+            raise RuntimeError("calibration_path must be provided")
+        calibration_path = Path(calibration_path)
+        if calibration_path.exists():
+            with open(calibration_path) as f:
                 self.calib_data = json.load(f)
             calibration = {
                 name: MotorCalibration(
@@ -192,7 +196,7 @@ class So101Collector:
                 for name, data in self.calib_data.items()
             }
         else:
-            raise RuntimeError(f"Calibration not found at {CALIBRATION_PATH}")
+            raise RuntimeError(f"Calibration not found at {calibration_path}")
 
         # Initialize motor bus with DEGREES mode for arm joints, RANGE_0_100 for gripper
         motors = {}
@@ -596,7 +600,9 @@ def save_sage_format(
 def so101_collector_main(
     motion_file,
     output_dir,
-    port="/dev/ttyACM1",
+    robot_port,
+    robot_type,
+    robot_id,
     control_freq=50,
     slowdown_factor=1,
     auto_start=False,
@@ -607,11 +613,16 @@ def so101_collector_main(
     Args:
         motion_file: Path to motion file (CSV format)
         output_dir: Output directory for SAGE-format data
-        port: Serial port for SO-101
+        robot_port: Serial port for SO-101
+        robot_type: Robot type for calibration path
+        robot_id: Robot ID for calibration path
         control_freq: Control frequency in Hz
         slowdown_factor: Factor to slow down motion
         auto_start: If True, skip user confirmation prompts
     """
+    # Construct calibration path from prefix, robot_type, and robot_id
+    calibration_path = CALIBRATION_PATH_PREFIX / robot_type / f"{robot_id}.json"
+    print(f"[SO-101 Collector] Using calibration: {calibration_path}")
     print(f"[SO-101 Collector] Loading motion: {motion_file}")
 
     # Load motion data
@@ -624,8 +635,8 @@ def so101_collector_main(
         seq = interpolate_motion(seq, motion_freq, control_freq)
 
     # Initialize collector
-    print(f"[SO-101 Collector] Connecting to robot on {port}")
-    collector = So101Collector(port=port)
+    print(f"[SO-101 Collector] Connecting to robot on {robot_port}")
+    collector = So101Collector(port=robot_port, calibration_path=calibration_path)
 
     try:
         # Enable torque
@@ -663,7 +674,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SO-101 motion collector")
     parser.add_argument("--motion-file", type=str, required=True, help="Path to motion file")
     parser.add_argument("--output-dir", type=str, required=True, help="Output directory")
-    parser.add_argument("--port", type=str, default="/dev/ttyUSB0", help="Serial port")
+    parser.add_argument("--robot-port", type=str, default="/dev/ttyACM0", help="Serial port")
+    parser.add_argument("--robot-type", type=str, default="so101_follower", help="Robot type for calibration path")
+    parser.add_argument("--robot-id", type=str, default="my_awesome_follower_arm", help="Robot ID for calibration path")
     parser.add_argument("--control-freq", type=int, default=50, help="Control frequency Hz")
     parser.add_argument("--slowdown", type=int, default=1, help="Slowdown factor")
     args = parser.parse_args()
@@ -671,7 +684,9 @@ if __name__ == "__main__":
     so101_collector_main(
         motion_file=args.motion_file,
         output_dir=args.output_dir,
-        port=args.port,
+        robot_port=args.robot_port,
+        robot_type=args.robot_type,
+        robot_id=args.robot_id,
         control_freq=args.control_freq,
         slowdown_factor=args.slowdown,
     )
