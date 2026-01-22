@@ -28,7 +28,6 @@ try:
 
     from lerobot.motors.feetech import FeetechMotorsBus
     from lerobot.motors.motors_bus import Motor, MotorCalibration, MotorNormMode
-    from lerobot.robots.so101_follower import SO101Follower
 
     LEROBOT_AVAILABLE = True
 except ImportError:
