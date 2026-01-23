@@ -10,10 +10,9 @@ import argparse
 import os
 import time
 
-# from sage.real_realman.realman_collector import realman_collector_main
+from sage.real_realman.realman_collector import realman_collector_main
 from sage.real_so101.so101_lerobot_collector import so101_collector_main
-
-# from sage.real_unitree.unitree_collector import unitree_collector_main
+from sage.real_unitree.unitree_collector import unitree_collector_main
 
 REST_PERIOD_SECONDS = 15
 
