@@ -18,14 +18,21 @@ from sage.real_so101.so101_lerobot_collector import so101_collector_main
 REST_PERIOD_SECONDS = 15
 
 
-def run_motion(robot_name, motion_file, output_dir, auto_start=False):
+def run_motion(robot_name, motion_file, output_dir, auto_start=False, robot_port=None, robot_type=None, robot_id=None):
     """Run a single motion file for the specified robot."""
     if robot_name == "h12" or robot_name == "g1":
         unitree_collector_main(robot_name, motion_file, output_dir)
     elif robot_name == "realman":
         realman_collector_main(motion_file, output_dir)
     elif robot_name == "so101":
-        so101_collector_main(motion_file, output_dir, auto_start=auto_start)
+        so101_collector_main(
+            motion_file,
+            output_dir,
+            robot_port=robot_port,
+            robot_type=robot_type,
+            robot_id=robot_id,
+            auto_start=auto_start,
+        )
 
 
 if __name__ == "__main__":
@@ -52,6 +59,25 @@ if __name__ == "__main__":
         "-y",
         action="store_true",
         help="Automatically start motion without waiting for user confirmation",
+    )
+    # SO-101 specific arguments
+    parser.add_argument(
+        "--robot-port",
+        type=str,
+        default="/dev/ttyACM0",
+        help="Serial port for SO-101 robot (default: /dev/ttyACM0)",
+    )
+    parser.add_argument(
+        "--robot-type",
+        type=str,
+        default="so101_follower",
+        help="Robot type for SO-101 (default: so101_follower)",
+    )
+    parser.add_argument(
+        "--robot-id",
+        type=str,
+        default="my_awesome_follower_arm",
+        help="Robot ID for SO-101 (default: my_awesome_follower_arm)",
     )
     args = parser.parse_args()
 
@@ -94,7 +120,15 @@ if __name__ == "__main__":
             print(f"Output: {output_dir}")
             print(f"{'='*60}\n")
 
-            run_motion(args.robot_name, motion_file, output_dir, auto_start=args.auto_start)
+            run_motion(
+                args.robot_name,
+                motion_file,
+                output_dir,
+                auto_start=args.auto_start,
+                robot_port=args.robot_port,
+                robot_type=args.robot_type,
+                robot_id=args.robot_id,
+            )
 
             # Rest period between runs (skip after the last run)
             if current_run < total_runs:
