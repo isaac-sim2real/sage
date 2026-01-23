@@ -57,20 +57,15 @@ if __name__ == "__main__":
 
     home_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    # Determine motion source subfolder based on robot
-    if args.robot_name == "so101":
-        motion_subfolder = ""  # SO-101 uses custom folder structure
-        output_subfolder = "custom"
-    else:
-        motion_subfolder = "amass"
-        output_subfolder = "amass"
-
     total_runs = len(args.motion_files) * args.repeats
     current_run = 0
 
     for motion_filename in args.motion_files:
         # Get motion name without extension for folder naming
         motion_name = os.path.splitext(os.path.basename(motion_filename))[0]
+
+        # Extract output_subfolder from motion file path (e.g., "custom/motion.txt" -> "custom")
+        output_subfolder = os.path.dirname(motion_filename) or "amass"
 
         # Build full motion file path
         motion_file = os.path.join(home_dir, "motion_files", args.robot_name, motion_filename)
