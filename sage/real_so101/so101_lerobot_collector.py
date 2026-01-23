@@ -419,8 +419,10 @@ class So101Collector:
                 tgt_enc = self.rad_to_encoder(target_positions[i], name)
 
             warning = " WARN" if diff > max_diff_deg else ""
+            range_str = f"[{range_min}-{range_max}]"
             print(
-                f"{name:<15} {cur_val:>9.1f}{unit} {tgt_val:>9.1f}{unit} {diff:>7.1f}{unit} {raw_encoders[i]:>8} {tgt_enc:>8} [{range_min}-{range_max}]{warning}"
+                f"{name:<15} {cur_val:>9.1f}{unit} {tgt_val:>9.1f}{unit} "
+                f"{diff:>7.1f}{unit} {raw_encoders[i]:>8} {tgt_enc:>8} {range_str}{warning}"
             )
 
         print("-" * 90)
