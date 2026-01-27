@@ -68,6 +68,16 @@ git clone https://github.com/isaac-sim2real/sage.git
 cd sage
 ```
 
+Install Git LFS to handle large files in the repository:
+
+```bash
+# Install Git LFS
+git lfs install
+
+# Pull large files
+git lfs pull
+```
+
 For the rest of installation, you can install the necessary dependencies either directly on your host machine, or by using the provided Docker image.
 
 ### Host Setup
