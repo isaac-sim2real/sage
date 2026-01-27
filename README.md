@@ -58,6 +58,7 @@ SAGE combines:
 - Python 3.10
 - Isaac Sim 5.0.0
 - Isaac Lab 2.2.0
+- Git LFS (Large File Storage)
 
 > **Note:** If you are using the provided Docker image, you do not need to install Python, Isaac Sim, and Isaac Lab. These dependencies are pre-installed in the Docker image.
 
@@ -66,6 +67,12 @@ Clone the repository:
 ```bash
 git clone https://github.com/isaac-sim2real/sage.git
 cd sage
+```
+
+Pull large files using Git LFS:
+
+```bash
+git lfs pull
 ```
 
 For the rest of installation, you can install the necessary dependencies either directly on your host machine, or by using the provided Docker image.
