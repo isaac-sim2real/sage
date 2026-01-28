@@ -780,7 +780,7 @@ class RobotDataComparator:
                 idx_width = (
                     max(
                         len(str(dataframe.index.name or "")),  # Index name length
-                        dataframe.index.astype(str).map(len).max(),  # Max index value length
+                        dataframe.index.astype(str).str.len().max(),  # Max index value length
                     )
                     + extra_space
                 )
@@ -789,10 +789,12 @@ class RobotDataComparator:
 
             # Adjust each data column width
             for i, col in enumerate(dataframe.columns):
+                # Use .str.len() instead of .map(len) - handles NaN properly in pandas 3.0+
+                _max_data_len = dataframe[col].astype(str).str.len().max() if len(dataframe) > 0 else 0
                 col_width = (
                     max(
                         len(str(col)),  # Column name length
-                        dataframe[col].astype(str).map(len).max() if len(dataframe) > 0 else 0,  # Max data length
+                        int(_max_data_len) if pd.notna(_max_data_len) else 0,  # Max data length (handle NaN)
                     )
                     + extra_space
                 )
