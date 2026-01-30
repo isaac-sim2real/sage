@@ -255,11 +255,12 @@ class So101Collector:
                 pos = np.clip(pos, 0.0, 1.0)
             positions.append(pos)
 
-            # Read velocity
-            vel = self.bus.read("Present_Velocity", name)
-            # Convert from degrees/s to rad/s to match position units
-            if name != "gripper":
-                vel = np.deg2rad(vel)  # Convert deg/s -> rad/s
+            # Read velocity raw (don't rely on LeRobot's normalize which may be wrong)
+            # STS3215: velocity register is in steps/s where 4096 steps = 360 degrees
+            raw_vel = self.bus.read("Present_Velocity", name, normalize=False)
+            # Convert steps/s to rad/s: vel_rad = vel_steps * (2π / 4096)
+            STEPS_TO_RAD = 2 * np.pi / 4096
+            vel = raw_vel * STEPS_TO_RAD
             velocities.append(vel)
 
             # Read current (as torque proxy)
