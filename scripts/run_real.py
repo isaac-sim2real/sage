@@ -56,7 +56,7 @@ Examples:
 
   # Run all motion files in a folder:
   python scripts/run_real.py --robot-name so101 --motion-folder custom --output-folder output --auto-start
-        """
+        """,
     )
     parser.add_argument(
         "--robot-name", action="store", type=str, help="Robot name: realman, h12, g1, or so101", required=True
@@ -66,15 +66,15 @@ Examples:
         action="store",
         type=str,
         nargs="+",
-        help="One or more motion files (relative to motion_files/<robot>/)", 
-        default=[]
+        help="One or more motion files (relative to motion_files/<robot>/)",
+        default=[],
     )
     parser.add_argument(
         "--motion-folder",
         action="store",
         type=str,
         help="Run all .txt motion files in this folder (relative to motion_files/<robot>/)",
-        default=None
+        default=None,
     )
     parser.add_argument(
         "--output-folder", action="store", type=str, help="Output folder for saving data", required=True
@@ -108,7 +108,7 @@ Examples:
         help="Robot ID for SO-101 (default: my_awesome_follower_arm)",
     )
     args = parser.parse_args()
-    
+
     # Validate that at least one motion source is provided
     if not args.motion_files and not args.motion_folder:
         parser.error("You must provide either --motion-files or --motion-folder")
@@ -117,17 +117,17 @@ Examples:
 
     # Collect motion files
     motion_files = list(args.motion_files)  # Start with explicitly listed files
-    
+
     # Add files from folder if specified
     if args.motion_folder:
         folder_path = os.path.join(home_dir, "motion_files", args.robot_name, args.motion_folder)
         if not os.path.isdir(folder_path):
             print(f"Error: Motion folder not found: {folder_path}")
             exit(1)
-        
+
         # Find all .txt files in the folder
         txt_files = sorted(glob.glob(os.path.join(folder_path, "*.txt")))
-        
+
         if not txt_files:
             print(f"Warning: No .txt files found in {folder_path}")
         else:
@@ -137,7 +137,7 @@ Examples:
                 if rel_path not in motion_files:  # Avoid duplicates
                     motion_files.append(rel_path)
             print(f"Found {len(txt_files)} motion files in {args.motion_folder}/")
-    
+
     if not motion_files:
         print("Error: No motion files to run")
         exit(1)
@@ -165,9 +165,7 @@ Examples:
             # Output directory: output/real/<robot>/<source>/
             # (motion_name subdirectory created by collector's save function)
             # For repeats > 1, append run suffix to motion name
-            output_dir = os.path.join(
-                home_dir, args.output_folder, f"real/{args.robot_name}/{output_subfolder}"
-            )
+            output_dir = os.path.join(home_dir, args.output_folder, f"real/{args.robot_name}/{output_subfolder}")
             os.makedirs(output_dir, exist_ok=True)
 
             # Modify motion name for repeated runs to avoid overwriting
