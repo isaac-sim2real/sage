@@ -263,9 +263,12 @@ class So101Collector:
             vel = raw_vel * STEPS_TO_RAD
             velocities.append(vel)
 
-            # Read current (as torque proxy)
-            cur = self.bus.read("Present_Current", name)
-            currents.append(cur)
+            # Read current and convert to torque (Nm)
+            # STS3215: register value in 6.5mA units, Kt ≈ 1.1 Nm/A
+            raw_current = self.bus.read("Present_Current", name, normalize=False)
+            current_amps = raw_current * 0.0065  # Convert to Amps
+            torque_nm = current_amps * 1.1  # Convert to Nm using motor torque constant
+            currents.append(torque_nm)
 
         return np.array(positions), np.array(velocities), np.array(currents)
 
