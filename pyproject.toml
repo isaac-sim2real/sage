@@ -22,6 +22,11 @@ dependencies = [
     "pyyaml",
 ]
 
+[project.optional-dependencies]
+so101 = [
+    "lerobot",
+]
+
 [tool.setuptools]
 packages = ["sage"]
 

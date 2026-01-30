@@ -69,3 +69,4 @@ output/real/h1_2/amass/0-Subject_33_F_13_poses_action_sequence/control.csv filte
 output/real/h1_2/amass/0-Subject_33_F_13_poses_action_sequence/state_motor.csv filter=lfs diff=lfs merge=lfs -text
 output/real/h1_2/amass/0-wave_both02_poses_action_sequence/control.csv filter=lfs diff=lfs merge=lfs -text
 output/real/h1_2/**/*.csv filter=lfs diff=lfs merge=lfs -text
+assets/so101/SO-ARM101-USD.usd filter=lfs diff=lfs merge=lfs -text
