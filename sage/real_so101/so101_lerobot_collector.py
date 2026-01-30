@@ -232,7 +232,7 @@ class So101Collector:
 
         Returns:
             positions: Joint positions in radians (gripper: 0-1 normalized)
-            velocities: Joint velocities (raw)
+            velocities: Joint velocities in rad/s (gripper: normalized units)
             currents: Motor currents (proxy for torque)
         """
         positions = []
@@ -257,6 +257,9 @@ class So101Collector:
 
             # Read velocity
             vel = self.bus.read("Present_Velocity", name)
+            # Convert from degrees/s to rad/s to match position units
+            if name != "gripper":
+                vel = np.deg2rad(vel)  # Convert deg/s -> rad/s
             velocities.append(vel)
 
             # Read current (as torque proxy)
