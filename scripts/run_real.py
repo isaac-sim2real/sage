@@ -18,7 +18,16 @@ from sage.real_unitree.unitree_collector import unitree_collector_main
 REST_PERIOD_SECONDS = 15
 
 
-def run_motion(robot_name, motion_file, output_dir, auto_start=False, robot_port=None, robot_type=None, robot_id=None):
+def run_motion(
+    robot_name,
+    motion_file,
+    output_dir,
+    motion_name=None,
+    auto_start=False,
+    robot_port=None,
+    robot_type=None,
+    robot_id=None,
+):
     """Run a single motion file for the specified robot."""
     if robot_name == "h12" or robot_name == "g1":
         unitree_collector_main(robot_name, motion_file, output_dir)
@@ -32,6 +41,7 @@ def run_motion(robot_name, motion_file, output_dir, auto_start=False, robot_port
             robot_type=robot_type,
             robot_id=robot_id,
             auto_start=auto_start,
+            motion_name=motion_name,
         )
 
 
@@ -152,22 +162,28 @@ Examples:
         for run_idx in range(1, args.repeats + 1):
             current_run += 1
 
-            # Create output directory: output/<robot>/<output_subfolder>/<motion_name>/run_<N>/
+            # Output directory: output/real/<robot>/<source>/
+            # (motion_name subdirectory created by collector's save function)
+            # For repeats > 1, append run suffix to motion name
             output_dir = os.path.join(
-                home_dir, args.output_folder, f"real/{args.robot_name}/{output_subfolder}/{motion_name}/run_{run_idx}"
+                home_dir, args.output_folder, f"real/{args.robot_name}/{output_subfolder}"
             )
             os.makedirs(output_dir, exist_ok=True)
 
+            # Modify motion name for repeated runs to avoid overwriting
+            effective_motion_name = motion_name if args.repeats == 1 else f"{motion_name}_run_{run_idx}"
+
             print(f"\n{'='*60}")
-            print(f"Running motion: {motion_name} (run {run_idx}/{args.repeats})")
+            print(f"Running motion: {effective_motion_name} (run {run_idx}/{args.repeats})")
             print(f"Progress: {current_run}/{total_runs} total runs")
-            print(f"Output: {output_dir}")
+            print(f"Output: {output_dir}/{effective_motion_name}/")
             print(f"{'='*60}\n")
 
             run_motion(
                 args.robot_name,
                 motion_file,
                 output_dir,
+                motion_name=effective_motion_name,
                 auto_start=args.auto_start,
                 robot_port=args.robot_port,
                 robot_type=args.robot_type,

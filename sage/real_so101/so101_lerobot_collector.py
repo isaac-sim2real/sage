@@ -607,6 +607,7 @@ def so101_collector_main(
     control_freq=50,
     slowdown_factor=1,
     auto_start=False,
+    motion_name=None,
 ):
     """
     Main function to collect motion data from SO-101.
@@ -620,6 +621,7 @@ def so101_collector_main(
         control_freq: Control frequency in Hz
         slowdown_factor: Factor to slow down motion
         auto_start: If True, skip user confirmation prompts
+        motion_name: Optional override for motion name (used for repeated runs)
     """
     # Construct calibration path from prefix, robot_type, and robot_id
     calibration_path = CALIBRATION_PATH_PREFIX / robot_type / f"{robot_id}.json"
@@ -627,7 +629,9 @@ def so101_collector_main(
     print(f"[SO-101 Collector] Loading motion: {motion_file}")
 
     # Load motion data
-    seq, joint_names, motion_freq, motion_name = load_motion_from_txt(motion_file)
+    seq, joint_names, motion_freq, file_motion_name = load_motion_from_txt(motion_file)
+    # Use override if provided, otherwise use name from file
+    motion_name = motion_name if motion_name else file_motion_name
     print(f"  Motion: {motion_name}, {seq.shape[0]} frames, {len(joint_names)} joints")
 
     # Interpolate to control frequency if needed
