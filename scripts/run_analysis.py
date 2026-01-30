@@ -18,7 +18,7 @@ def main():
     parser.add_argument(
         "--motion-source",
         type=str,
-        choices=["amass","custom"],
+        choices=["amass", "custom"],
         required=True,
         help="Source of the motion",
     )

@@ -168,18 +168,19 @@ python scripts/run_analysis.py \
 
 ### Real Robot Integration
 
-**Different robot manufacturers provide different control APIs and dependencies.** For example, Unitree robots require ROS2 and Unitree SDK, while Realman robots require their proprietary `Robotic_Arm_Custom package`. See the robot-specific documentation below for detailed installation instructions.
+**Different robot manufacturers provide different control APIs and dependencies.** For example, Unitree robots require ROS2 and Unitree SDK, Realman robots require their proprietary `Robotic_Arm_Custom package`, while LeRobot SO-101 requires the `lerobot` package. See the robot-specific documentation below for detailed installation instructions.
 
 **Supported robots:**
 
 - **Unitree G1** and **H1-2** humanoid robots
 - **Realman WR75S** dual-arm robot
+- **LeRobot SO-101** follower arm
 
-Use the unified script to collect motion data on real robots:
+Use the unified script to collect motion data on real robots (with custom robot-specific parameters):
 
 ```bash
 python scripts/run_real.py \
-    --robot-name {g1|h12|realman} \
+    --robot-name {g1|h12|realman|so101} \
     --motion-files 'path/to/your/motion_sequence.txt' \
     --output-folder 'path/to/your/output_folder'
 ```
@@ -188,6 +189,7 @@ For detailed setup instructions, usage examples, and robot-specific configuratio
 
 - [UNITREE_REAL](docs/UNITREE_REAL.md) - Unitree G1 and H1-2 guide
 - [REALMAN_REAL](docs/REALMAN_REAL.md) - Realman WR75S guide
+- [LEROBOT_REAL](docs/LEROBOT_REAL.md) - LeRobot SO-101 guide
 
 ## OSMO Workflow
 
