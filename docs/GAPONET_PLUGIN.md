@@ -6,7 +6,7 @@ GapONet Plugin integrates DeepONet neural network actuator into SAGE's IsaacLab 
 
 ## Quick Start
 
-**Prerequisites**: 
+**Prerequisites**:
 - All commands assume you are in the `sage/` directory
 - Replace `<ISAACLAB_PATH>` with your actual IsaacLab installation path
 
@@ -166,20 +166,20 @@ for step in physics_steps:
         q_current = robot.data.joint_pos
         dq_current = robot.data.joint_vel
         q_target = motion_data[frame_idx]
-        
+
         # 2. GapONet inference (if enabled)
         if use_gaponet:
             delta = gaponet_actuator(q_current, dq_current, q_target)
             q_corrected = q_target + action_scale * delta
         else:
             q_corrected = q_target
-        
+
         # 3. Send position target
         robot.set_joint_position_target(q_corrected)
-    
+
     # 4. PhysX automatically executes PD control (C++ layer, high stability)
     # tau = Kp * (q_corrected - q_current) + Kd * (0 - dq_current)
-    
+
     # 5. Step simulation
     sim.step()
 ```
