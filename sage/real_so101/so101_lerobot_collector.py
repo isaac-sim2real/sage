@@ -264,8 +264,8 @@ class So101Collector:
             velocities.append(vel)
 
             # Read current and convert to torque estimate (note: this is an estimate)
-            # STS3215: 30 kg·cm = 2.943 Nm max torque, ~231 raw units at stall
-            TORQUE_SCALE = 2.943 / 231  # ≈ 0.01274 Nm per raw unit
+            # STS3215 12V, determined by measuring stall current
+            TORQUE_SCALE = 0.022814 
             raw_current = self.bus.read("Present_Current", name, normalize=False)
             torque_nm = raw_current * TORQUE_SCALE
             currents.append(torque_nm)
