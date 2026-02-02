@@ -255,7 +255,7 @@ class So101Collector:
                 pos = np.clip(pos, 0.0, 1.0)
             positions.append(pos)
 
-            # Read velocity raw (don't rely on LeRobot's normalize which may be wrong)
+            # Read velocity raw (don't rely on LeRobot's normalize)
             # STS3215: velocity register is in steps/s where 4096 steps = 360 degrees
             raw_vel = self.bus.read("Present_Velocity", name, normalize=False)
             # Convert steps/s to rad/s: vel_rad = vel_steps * (2π / 4096)
@@ -263,11 +263,11 @@ class So101Collector:
             vel = raw_vel * STEPS_TO_RAD
             velocities.append(vel)
 
-            # Read current and convert to torque (Nm)
-            # STS3215: register value in 6.5mA units, Kt ≈ 1.1 Nm/A
+            # Read current and convert to torque estimate (note: this is an estimate)
+            # STS3215: 30 kg·cm = 2.943 Nm max torque, ~231 raw units at stall
+            TORQUE_SCALE = 2.943 / 231  # ≈ 0.01274 Nm per raw unit
             raw_current = self.bus.read("Present_Current", name, normalize=False)
-            current_amps = raw_current * 0.0065  # Convert to Amps
-            torque_nm = current_amps * 1.1  # Convert to Nm using motor torque constant
+            torque_nm = raw_current * TORQUE_SCALE
             currents.append(torque_nm)
 
         return np.array(positions), np.array(velocities), np.array(currents)
