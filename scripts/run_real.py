@@ -11,9 +11,17 @@ import glob
 import os
 import time
 
-from sage.real_realman.realman_collector import realman_collector_main
+try:
+    from sage.real_realman.realman_collector import realman_collector_main
+except ImportError:
+    realman_collector_main = None
+
 from sage.real_so101.so101_lerobot_collector import so101_collector_main
-from sage.real_unitree.unitree_collector import unitree_collector_main
+
+try:
+    from sage.real_unitree.unitree_collector import unitree_collector_main
+except ImportError:
+    unitree_collector_main = None
 
 REST_PERIOD_SECONDS = 15
 
@@ -30,8 +38,12 @@ def run_motion(
 ):
     """Run a single motion file for the specified robot."""
     if robot_name == "h12" or robot_name == "g1":
+        if unitree_collector_main is None:
+            raise RuntimeError("Unitree collector not available. Install required dependencies.")
         unitree_collector_main(robot_name, motion_file, output_dir)
     elif robot_name == "realman":
+        if realman_collector_main is None:
+            raise RuntimeError("Realman collector not available. Install required dependencies.")
         realman_collector_main(motion_file, output_dir)
     elif robot_name == "so101":
         so101_collector_main(
