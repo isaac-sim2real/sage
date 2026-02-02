@@ -170,7 +170,7 @@ class So101Collector:
             "time": [],
             "positions": [],
             "velocities": [],
-            "currents": [],
+            "torques": [],
         }
         self.start_monotonic = None
         print(port)
@@ -233,11 +233,11 @@ class So101Collector:
         Returns:
             positions: Joint positions in radians (gripper: 0-1 normalized)
             velocities: Joint velocities in rad/s (gripper: normalized units)
-            currents: Motor currents (proxy for torque)
+            torques: Estimated motor torques in Nm (converted from current)
         """
         positions = []
         velocities = []
-        currents = []
+        torques = []
 
         for name in self.joint_names:
             # Read raw encoder position
@@ -264,13 +264,13 @@ class So101Collector:
             velocities.append(vel)
 
             # Read current and convert to torque estimate (note: this is an estimate)
-            # STS3215 12V, determined by measuring stall current
-            TORQUE_SCALE = 0.022814 
+            # STS3215 12V, estimated by measuring stall current
+            TORQUE_SCALE = 0.022814
             raw_current = self.bus.read("Present_Current", name, normalize=False)
             torque_nm = raw_current * TORQUE_SCALE
-            currents.append(torque_nm)
+            torques.append(torque_nm)
 
-        return np.array(positions), np.array(velocities), np.array(currents)
+        return np.array(positions), np.array(velocities), np.array(torques)
 
     def rad_to_encoder(self, radian, joint_name):
         """
@@ -472,7 +472,7 @@ class So101Collector:
             "time": [],
             "positions": [],
             "velocities": [],
-            "currents": [],
+            "torques": [],
         }
 
         # Move to start position
@@ -507,11 +507,11 @@ class So101Collector:
             command_positions.append(target_pos.copy())
 
             # Read and store state
-            positions, velocities, currents = self.read_state()
+            positions, velocities, torques = self.read_state()
             self.collected_data["time"].append(t)
             self.collected_data["positions"].append(positions)
             self.collected_data["velocities"].append(velocities)
-            self.collected_data["currents"].append(currents)
+            self.collected_data["torques"].append(torques)
 
             # Timing control
             loop_elapsed = time.monotonic() - loop_start
@@ -555,7 +555,7 @@ def save_sage_format(
         joint_names: List of joint names
         command_times: List of command timestamps (seconds)
         command_positions: List of commanded positions
-        collected_data: Dict with time, positions, velocities, currents
+        collected_data: Dict with time, positions, velocities, torques
     """
     motion_dir = os.path.join(output_dir, motion_name)
     os.makedirs(motion_dir, exist_ok=True)
@@ -595,7 +595,7 @@ def save_sage_format(
             timestamp_us = t * 1e6
             positions = collected_data["positions"][i].tolist()
             velocities = collected_data["velocities"][i].tolist()
-            torques = collected_data["currents"][i].tolist()  # Using current as torque proxy
+            torques = collected_data["torques"][i].tolist()
             writer.writerow(["STATE_MOTOR", timestamp_us, positions, velocities, torques])
 
     print(f"Data saved to: {motion_dir}")
