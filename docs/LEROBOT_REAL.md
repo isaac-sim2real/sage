@@ -6,6 +6,8 @@ This project provides tools for collecting and processing motion data from LeRob
 
 You can set up the real robot control environment either directly on your host machine or using Docker.
 
+### Host Installation
+
 For host installation, follow [the official guide](https://huggingface.co/docs/lerobot/installation):
 
 1. **Create and activate a Conda environment:**
@@ -19,10 +21,12 @@ For host installation, follow [the official guide](https://huggingface.co/docs/l
     pip install 'lerobot[feetech]'
     ```
 
-For Docker installation, build the Docker image:
+### Docker Installation
+
+For Docker installation, make sure you're at the root of the repository (the `sage` directory), and build the Docker image:
 
 ```sh
-docker build -f Dockerfile_so101 -t sage:so101 .
+docker build -f Dockerfile_so101_real -t sage:so101 .
 ```
 
 Then run the container:
