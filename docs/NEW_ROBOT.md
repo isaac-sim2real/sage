@@ -266,7 +266,7 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
     --motion-source custom \
     --motion-files motion_files/gr1t2/custom/custom_motion.txt \
     --valid-joints-file configs/gr1t2_valid_joints.txt \
-    --output-folder results \
+    --output-folder output \
     --fix-root
 ```
 
@@ -279,7 +279,7 @@ ${ISAACSIM_PATH}/python.sh scripts/run_simulation.py \
 - Robot spawns correctly above the ground
 - All specified joints move according to the motion file
 - No error messages about missing joints
-- Output files are generated in `<REPO_ROOT>/results/sim/gr1t2/custom/custom_motion/` (path will use your robot name)
+- Output files are generated in `<REPO_ROOT>/output/sim/gr1t2/custom/custom_motion/` (path will use your robot name)
   - `joint_list.txt`: Lists controlled joints
   - `control.csv`: Command positions over time
   - `state_motor.csv`: Actual joint states over time
