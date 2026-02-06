@@ -31,6 +31,7 @@ SAGE combines:
 - [Usage](#usage)
   - [Simulation Execution](#simulation-execution)
   - [Data Analysis](#data-analysis)
+  - [GapONet Plugin](#gaponet-plugin)
   - [Real Robot Integration](#real-robot-integration)
 - [OSMO Workflow](#osmo-workflow)
 - [Data Format](#data-format)
@@ -158,6 +159,48 @@ python scripts/run_analysis.py \
 - **Metrics Excel files** with RMSE, MAPE, correlation, cosine similarity
 - **Visualization plots** for individual joint comparisons (position, velocity, torque)
 - **Statistical boxplots** comparing simulation vs real robot performance
+
+### GapONet Plugin
+
+**GapONet** is a neural network-based actuator plugin that uses DeepONet architecture to predict and compensate for sim-to-real actuator gaps in real-time during simulation. It enhances motion tracking by learning from paired sim-real data and applying learned corrections during simulation.
+
+**Dependencies:**
+
+This plugin requires a modified version of IsaacLab with custom actuator support. Please use the following repository and branch:
+
+```bash
+git clone -b feature/add-plug-in-2.2.0 https://github.com/XiangXiao128/IsaacLab.git
+```
+
+**Quick Example:**
+
+```bash
+# Run baseline simulation (no GapONet)
+${ISAACSIM_PATH}/python.sh scripts/run_simulation_gaponet.py \
+    --robot-name h1_2 \
+    --motion-files motion_files/h1_2/amass/0-wave_both02_poses_action_sequence.txt \
+    --output-folder output/sim_baseline \
+    --headless
+
+# Run with GapONet
+${ISAACSIM_PATH}/python.sh scripts/run_simulation_gaponet.py \
+    --robot-name h1_2 \
+    --motion-files motion_files/h1_2/amass/0-wave_both02_poses_action_sequence.txt \
+    --output-folder output/sim_gaponet \
+    --gaponet-model models/policy.pt \
+    --use-gaponet \
+    --headless
+
+# Compare results
+python scripts/compare_gaponet.py \
+    --baseline output/sim_baseline/h1_2/0-wave_both02_poses_action_sequence \
+    --gaponet output/sim_gaponet/h1_2/0-wave_both02_poses_action_sequence \
+    --output output/comparison_results
+```
+
+For detailed documentation, installation, usage, and architecture details, refer to:
+
+- **[GapONet Plugin Guide](docs/GAPONET_PLUGIN.md)** - Complete documentation for GapONet integration
 
 ### Real Robot Integration
 

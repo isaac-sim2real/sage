@@ -1,0 +1,10 @@
+# Ignore all model files (they are usually large)
+*.pt
+*.pth
+*.onnx
+*.pb
+
+# But keep specific files
+!README.md
+!.gitignore
+!policy.pt
